@@ -1,0 +1,123 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+  moduleFormat = "cjs"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  ADMIN
+  EDITOR
+  VIEWER
+}
+
+enum DocStatus {
+  INDEXING
+  READY
+  FAILED
+}
+
+model Organization {
+  id String @id @default(cuid())
+  name String
+  slug String @unique
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  teams Team[]
+  users User[]
+  documents Document[]
+  chats Chat[]
+
+  @@map("organizations")
+}
+
+model Team {
+  id String @id @default(cuid())
+  name String
+  organizationId String @map("organization_id")
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  chats Chat[]
+
+  @@index([organizationId])
+  @@map("teams")
+}
+
+model User{
+  id String @id @default(cuid())
+  name String
+  email String @unique
+  role Role @default(VIEWER)
+  organizationId String @map("organization_id")
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([organizationId])
+  @@map("users")
+}
+
+model Document {
+  id String @default(cuid()) @id
+  name String
+  type String
+  status DocStatus @default(INDEXING)
+  uploadedAt DateTime @default(now()) @map("uploaded_at")
+  uploadedBy String @map("uploaded_by")
+  chunksCount Int @default(0) @map("chunks_count")
+  organizationId String @map("organization_id")
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  chunks DocumentChunk[]
+
+  @@index([organizationId])
+  @@map("documents")
+}
+
+model DocumentChunk {
+  id String @id @default(cuid())
+  documentId String @map("document_id")
+  document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  organizationId String
+  sectionTitle String? @map("section_title")
+  content String
+
+  embedding Unsupported("vector(1536)")?
+
+  @@index([organizationId])
+  @@index([documentId])
+  @@map("document_chunks")
+}
+
+model Chat {
+  id String @id @default(cuid())
+  title String
+  organizationId String @map("organization_id")
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  teamId String? @map("team_id")
+  team Team? @relation(fields: [teamId], references: [id])
+  createdAt DateTime @default(now()) @map("created_at")
+   messages Message[]
+
+   @@index([organizationId])
+   @@map("chats")
+}
+
+model Message {
+  id String @id @default(cuid())
+  chatId String @map("chat_id")
+  chat Chat @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  role String
+  text String
+  citations Json?
+  createdAt DateTime @map("created_at") @default(now())
+}
