@@ -1,4 +1,8 @@
-import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import {
+  GetObjectCommand,
+  PutObjectCommand,
+  S3Client,
+} from '@aws-sdk/client-s3';
 import { Injectable, Logger } from '@nestjs/common';
 import axios from 'axios';
 
@@ -19,6 +23,20 @@ export class AiStorageService {
         secretAccessKey: process.env.R2_SECRET_ACCESS_KEY || '',
       },
     });
+  }
+  async uploadFileToR2(fileKey: string, content: string) {
+    const command = new PutObjectCommand({
+      Bucket: 'cognitive-sec',
+      Key: fileKey,
+      Body: content,
+    });
+
+    try {
+      const response = this.r2Client.send(command);
+      return response;
+    } catch (error: any) {
+      return new Error('Error uploading file', error);
+    }
   }
 
   async downloadFileFromR2(fileKey: string): Promise<Buffer> {

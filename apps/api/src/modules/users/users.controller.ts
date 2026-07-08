@@ -1,0 +1,36 @@
+import { Body, Controller, Get, Patch, UseGuards } from '@nestjs/common';
+import { UsersService } from './users.service';
+import { TenantGuard } from 'src/common/guards/tenant.guard';
+import { JwtGuard } from 'src/common/guards/jwt.guard';
+import { CurrentUser } from 'src/common/decorators/current-user.decorator';
+import type { AuthenticatedUser } from 'src/common/decorators/current-user.decorator';
+import { UpdateRole, UpdateUser } from './dto/users.dto';
+import { Roles } from 'src/common/decorators/roles.decorator';
+
+@Controller('users')
+export class UsersController {
+  constructor(private readonly usersService: UsersService) {}
+
+  @UseGuards(TenantGuard, JwtGuard)
+  @Get('me')
+  async me(@CurrentUser() user: AuthenticatedUser) {
+    return this.usersService.me(user.id, user.organizationId);
+  }
+
+  @Patch('me')
+  async updateUser(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() body: UpdateUser,
+  ) {
+    return this.usersService.updateMe(user.id, user.organizationId, body);
+  }
+
+  @Roles('ADMIN')
+  @Patch(':id/role')
+  async updateUserRole(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() body: UpdateRole,
+  ) {
+    return this.usersService.updateUserRole(user.id, user.organizationId, body);
+  }
+}

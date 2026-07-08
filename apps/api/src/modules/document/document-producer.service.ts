@@ -6,7 +6,8 @@ import { Queue } from 'bullmq';
 export interface IngestionJobPayload {
   documentId: string;
   organizationId: string;
-  fileUrl: string;
+  fileKey: string;
+  fileName: string;
 }
 
 @Injectable()

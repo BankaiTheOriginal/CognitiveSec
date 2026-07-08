@@ -25,19 +25,68 @@ enum DocStatus {
   FAILED
 }
 
+model User {
+  id               String       @id @default(cuid())
+  name             String
+  email            String       @unique
+  passwordHash     String       @map("password_hash")
+  refreshTokenHash String?      @map("refresh_token_hash")
+  createdAt        DateTime     @default(now()) @map("created_at")
+  teamMemberships TeamMemberships[]
+  // Relations
+  memberships      Membership[]
+
+  @@map("users")
+}
+
 model Organization {
-  id String @id @default(cuid())
-  name String
-  slug String @unique
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  teams Team[]
-  users User[]
+  teams     Team[]
   documents Document[]
-  chats Chat[]
+  chats     Chat[]
+  
+  memberships Membership[]
+  teamMemberships TeamMemberships[]
 
   @@map("organizations")
+}
+
+model Membership {
+  id             String       @id @default(cuid())
+  userId         String       @map("user_id")
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organizationId String       @map("organization_id")
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  
+  role           Role         @default(VIEWER)
+  createdAt      DateTime     @default(now()) @map("created_at")
+
+  @@unique([userId, organizationId]) 
+  @@index([organizationId])
+  @@index([userId])
+  @@map("memberships")
+}
+
+model TeamMemberships {
+  id String @id @default(cuid())
+  userId String @map("user_id")
+  user User @relation(fields: [userId], references: [id])
+  organizationId String @map("organization_id")
+  organization Organization @relation(fields: [organizationId], references: [id])
+  teamId String @map("team_id")
+  team Team @relation(fields: [teamId], references: [id])
+
+  createdAt DateTime @default(now())
+  @@unique([userId, teamId])
+  @@index([userId])
+  @@index([organizationId])
+  @@index([teamId])
+  @@map("team_memberships")
 }
 
 model Team {
@@ -48,32 +97,20 @@ model Team {
   createdAt DateTime @default(now()) @map("created_at")
 
   chats Chat[]
-
+  teamMemberships TeamMemberships[]
   @@index([organizationId])
   @@map("teams")
-}
-
-model User{
-  id String @id @default(cuid())
-  name String
-  email String @unique
-  role Role @default(VIEWER)
-  organizationId String @map("organization_id")
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now()) @map("created_at")
-
-  @@index([organizationId])
-  @@map("users")
 }
 
 model Document {
   id String @default(cuid()) @id
   name String
+  fileKey String @unique
   type String
   status DocStatus @default(INDEXING)
   uploadedAt DateTime @default(now()) @map("uploaded_at")
   uploadedBy String @map("uploaded_by")
-  chunksCount Int @default(0) @map("chunks_count")
+  chunksCount Int? @default(0) @map("chunks_count")
   organizationId String @map("organization_id")
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
@@ -104,7 +141,7 @@ model Chat {
   organizationId String @map("organization_id")
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   teamId String? @map("team_id")
-  team Team? @relation(fields: [teamId], references: [id])
+  team Team? @relation(fields: [teamId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now()) @map("created_at")
    messages Message[]
 

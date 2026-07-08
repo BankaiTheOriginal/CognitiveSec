@@ -6,8 +6,10 @@ import { AiStorageService } from '../integrations/ai-storage.service';
 import { Job } from 'bullmq';
 import { IngestionJobPayload } from './document-producer.service';
 import { DocStatus } from 'generated/prisma/enums';
-import { PDFParse } from 'pdf-parse';
+import * as pdfModule from 'pdf-parse';
 import mammoth from 'mammoth';
+
+const pdf = (pdfModule as any).default;
 
 @Processor('document-ingestion')
 @Injectable()
@@ -23,16 +25,16 @@ export class DocumentConsumerProcessor extends WorkerHost {
   }
 
   async process(job: Job<IngestionJobPayload, any, string>): Promise<any> {
-    const { documentId, organizationId, fileUrl } = job.data;
+    const { documentId, organizationId, fileKey, fileName } = job.data;
     this.logger.log(
       `Executing live ingestion worker pipeline for document token: ${documentId}`,
     );
 
     try {
-      const fileBuffer = await this.aiStorage.downloadFileFromR2(fileUrl);
+      const fileBuffer = await this.aiStorage.downloadFileFromR2(fileKey);
       const rawExtractedText = await this.extractTextFromBuffer(
         fileBuffer,
-        job.data.fileUrl,
+        fileName,
       );
       const chunks = this.splitter.splitText(rawExtractedText);
 
@@ -53,7 +55,7 @@ export class DocumentConsumerProcessor extends WorkerHost {
         await this.prisma.$executeRawUnsafe(
           `
           INSERT INTO "document_chunks" (id, document_id, organization_id, section_title, content, embedding)
-          VALUES (gen_random_uuid(), '${documentId}'::uuid, '${organizationId}'::uuid, 'Chunk ${i + 1}', $1, '${vectorString}'::vector)
+          VALUES (gen_random_uuid(), '${documentId}', '${organizationId}', 'Chunk ${i + 1}', $1, '${vectorString}'::vector)
         `,
           contentSegment,
         );
@@ -88,41 +90,47 @@ export class DocumentConsumerProcessor extends WorkerHost {
     }
   }
 
-  private async extractTextFromBuffer(
+  async extractTextFromBuffer(
     buffer: Buffer,
-    fileKey: string,
+    fileName: string,
   ): Promise<string> {
-    if (fileKey.endsWith('.csv') || fileKey.endsWith('.txt')) {
+    const lowerName = fileName.toLowerCase();
+
+    if (lowerName.endsWith('.csv') || lowerName.endsWith('.txt')) {
       return buffer.toString('utf-8');
     }
 
-    if (fileKey.endsWith('.pdf')) {
-      const parser = new PDFParse({ data: buffer });
-      const result = await parser.getText();
+    if (lowerName.endsWith('.pdf')) {
+      try {
+        const parsedData = await pdf(buffer);
+        const text = parsedData.text.trim();
 
-      await parser.destroy();
+        if (!text) {
+          throw new BadRequestException('Could not extract text from PDF file');
+        }
 
-      const text = result.text.trim();
-
-      if (!text) {
-        throw new BadRequestException('Could not extract text from PDF file');
+        return text;
+      } catch (error: any) {
+        throw new BadRequestException(`PDF Parsing failed: ${error.message}`);
       }
-
-      return text;
     }
 
-    if (fileKey.endsWith('.docx')) {
-      const result = await mammoth.extractRawText({ buffer });
+    if (lowerName.endsWith('.docx')) {
+      try {
+        const result = await mammoth.extractRawText({ buffer });
+        const text = result.value.trim();
 
-      const text = result.value.trim();
+        if (!text) {
+          throw new BadRequestException(
+            'Could not extract text from DOCX file',
+          );
+        }
 
-      if (!text) {
-        throw new BadRequestException('Could not extract text from DOCX file');
+        return text;
+      } catch (error: any) {
+        throw new BadRequestException(`DOCX Parsing failed: ${error.message}`);
       }
-
-      return text;
     }
-
     return buffer.toString('utf-8');
   }
 }

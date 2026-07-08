@@ -7,6 +7,7 @@ import {
 import { AiStorageService } from '../integrations/ai-storage.service';
 import axios from 'axios';
 import { PrismaService } from 'src/prisma.service';
+import { DocumentConsumerProcessor } from '../document/document-consumer.processor';
 
 @Injectable()
 export class ChatInferenceService {
@@ -35,7 +36,7 @@ export class ChatInferenceService {
     const contextMatches = await this.prisma.$queryRawUnsafe<any[]>(`
       SELECT id, document_id, section_title, content, (embedding <=> '${embeddingString}'::vector) AS distance
       FROM document_chunks
-      WHERE organization_id = '${organizationId}'::uuid
+      WHERE organization_id = '${organizationId}'
       ORDER BY distance ASC
       LIMIT 4;
     `);
@@ -74,7 +75,7 @@ export class ChatInferenceService {
           { role: 'system', content: runtimeSystemPrompt },
           { role: 'user', content: userQueryMessage },
         ],
-        response_format: { type: 'json_object' }, // Enforce valid JSON outputs from the LLM
+        response_format: { type: 'json_object' },
       },
       {
         headers: {
