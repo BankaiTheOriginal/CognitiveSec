@@ -18,8 +18,7 @@ export async function getDocument(id: string) {
 }
 
 export async function deleteDocument(id: string) {
-  const response = await api.delete(`${base_url}/${id}`);
-  return response.data;
+  await api.delete(`${base_url}/${id}`);
 }
 
 export async function reindex(id: string) {

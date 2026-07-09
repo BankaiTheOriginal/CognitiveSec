@@ -22,9 +22,8 @@ export async function renameTeam(id: string, data: UpdateTeam) {
   return response.data;
 }
 
-export async function deleteTeam(id: string, uid: string) {
-  const response = await api.delete(`${base_url}/${id}`);
-  return response.data;
+export async function deleteTeam(id: string) {
+  await api.delete(`${base_url}/${id}`);
 }
 
 export async function addUserToTeam(id: string, uid: string) {
@@ -33,5 +32,6 @@ export async function addUserToTeam(id: string, uid: string) {
 }
 
 export async function removeUserFromTeam(id: string, uid: string) {
-  const response = api.delete(`${base_url}/${id}/members/${uid}`);
+  const response = await api.delete(`${base_url}/${id}/members/${uid}`);
+  return response.data;
 }

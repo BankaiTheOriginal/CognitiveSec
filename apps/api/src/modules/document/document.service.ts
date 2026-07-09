@@ -9,6 +9,7 @@ import { DocumentConsumerProcessor } from './document-consumer.processor';
 import multer from 'multer';
 import { DocumentProducerService } from './document-producer.service';
 import { NotFoundError } from 'rxjs';
+import * as crypto from 'crypto';
 @Injectable()
 export class DocumentService {
   constructor(

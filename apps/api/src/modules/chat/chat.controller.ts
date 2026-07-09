@@ -66,7 +66,7 @@ export class ChatController {
     return this.chatService.getMessages(user.organizationId, user.id, id);
   }
 
-  @Post(':/id/messages')
+  @Post(':id/messages')
   async sendMessage(
     @CurrentUser() user: AuthenticatedUser,
     @Param('id') id: string,

@@ -88,7 +88,7 @@ export class AuthController {
   }
 
   @UseGuards(JwtGuard)
-  @Post('switch-workplace')
+  @Post('switch-workspace')
   async switchWorkspace(
     @CurrentUser() user: AuthenticatedUser,
     @Body() body: { targetOrganizationId: string },

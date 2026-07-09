@@ -24,8 +24,8 @@ export class OrganizationsService {
     organizationId: string,
     data: UpdateOrganization,
   ) {
-    const organization = await this.prisma.organization.findUnique({
-      where: { id: organizationId, users: { some: { id: userId } } },
+    const organization = await this.prisma.organization.findFirst({
+      where: { id: organizationId, memberships: { some: { userId } } },
     });
     const { name, slug } = data;
 

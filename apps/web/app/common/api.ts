@@ -10,10 +10,6 @@ export const api = axios.create({
   },
 });
 
-const getAccessToken = (): string | null => {
-  return localStorage.getItem("accessToken");
-};
-
 api.interceptors.request.use(
   (config) => {
     const token = useAuthStore.getState().accessToken;
