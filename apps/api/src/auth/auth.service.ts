@@ -32,6 +32,7 @@ export class AuthService {
   private async findUser(email?: string, userId?: string) {
     const user = await this.prisma.user.findUnique({
       where: { email, id: userId },
+      include: { memberships: true },
     });
     if (!user) throw new UnauthorizedException('Wrong email or password');
     return user;
@@ -73,6 +74,8 @@ export class AuthService {
   }
   async login(email: string, password: string) {
     const user = await this.findUser(email);
+    const userMember = user.memberships.at(0)?.organizationId;
+    if (!userMember) throw new ForbiddenException();
 
     //Verify password
     const verifiedPassword = await argon2.verify(user.passwordHash, password);
@@ -88,23 +91,27 @@ export class AuthService {
         'User is not associated with any organization',
       );
     const activeMembership = memberships[0];
-
-    return await this.generateTokenPair(user, activeMembership);
+    const role = activeMembership.role;
+    const tokens = await this.generateTokenPair(user, activeMembership);
+    return { tokens, user, role };
   }
 
   async switchWorkspace(userId: string, targetOrganizationId: string) {
     const user = await this.findUser(undefined, userId);
-    const membership = await this.findUserInOrg(userId, targetOrganizationId);
+    const membership = await this.findUserInOrg(user.id, targetOrganizationId);
 
-    return this.generateTokenPair(user, membership);
+    const tokens = await this.generateTokenPair(user, membership);
+    const user_context = membership;
+    return { tokens, user_context };
   }
 
   async refresh(refreshToken: string) {
-    const payload = this.jwt.verify<{ sub: string; email: string }>(
-      refreshToken,
-    );
+    const payload = this.jwt.verify<{
+      sub: string;
+      email: string;
+    }>(refreshToken);
 
-    const user = await this.prisma.user.findUnique({
+    const user = await this.prisma.user.findFirst({
       where: { id: payload.sub },
       include: { memberships: true },
     });
@@ -157,11 +164,15 @@ export class AuthService {
         role: 'ADMIN',
       },
     });
+
+    return { message: 'User created successsfully' };
   }
 
   async me(userId: string, organizationId: string) {
     const membership = await this.findUserInOrg(userId, organizationId);
-    return membership.user;
+    const user = membership.user;
+
+    return { user, role: membership.role };
   }
   //To-Do Forgot-Password Reset-Password
 }

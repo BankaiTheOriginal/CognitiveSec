@@ -14,6 +14,7 @@ import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import type { AuthenticatedUser } from 'src/common/decorators/current-user.decorator';
 import { TenantGuard } from 'src/common/guards/tenant.guard';
 import { JwtGuard } from 'src/common/guards/jwt.guard';
+import { SignUp } from './dto/auth.dto';
 interface Login {
   email: string;
   password: string;
@@ -25,20 +26,25 @@ export class AuthController {
 
   @Post('login')
   async login(@Body() body: Login, @Res({ passthrough: true }) res: Response) {
-    const { access_token, refresh_token } = await this.authService.login(
+    const { tokens, user, role } = await this.authService.login(
       body.email,
       body.password,
     );
 
-    res.cookie('refreshToken', refresh_token, {
+    res.cookie('refreshToken', tokens.refresh_token, {
       maxAge: SEVEN_DAYS_IN_MS,
       httpOnly: true,
       secure: true,
       sameSite: 'lax',
       path: '/',
     });
+    const access_token = tokens.access_token;
+    return { access_token, user, role };
+  }
 
-    return access_token;
+  @Post('sign-up')
+  async signUp(@Body() body: SignUp) {
+    return this.authService.signUp(body);
   }
 
   @Post('refresh')
@@ -88,25 +94,24 @@ export class AuthController {
     @Body() body: { targetOrganizationId: string },
     @Res({ passthrough: true }) res: Response,
   ) {
-    const { access_token, refresh_token } =
-      await this.authService.switchWorkspace(
-        user.id,
-        body.targetOrganizationId,
-      );
-    res.cookie('refreshToken', refresh_token, {
+    const { tokens, user_context } = await this.authService.switchWorkspace(
+      user.id,
+      body.targetOrganizationId,
+    );
+    res.cookie('refreshToken', tokens.refresh_token, {
       maxAge: SEVEN_DAYS_IN_MS,
       httpOnly: true,
       secure: true,
       sameSite: 'lax',
       path: '/',
     });
-
-    return access_token;
+    const { access_token } = tokens;
+    return { access_token, user_context };
   }
 
   @UseGuards(TenantGuard, JwtGuard)
   @Get('me')
   async me(@CurrentUser() user: AuthenticatedUser) {
-    await this.authService.me(user.id, user.organizationId);
+    return this.authService.me(user.id, user.organizationId);
   }
 }
