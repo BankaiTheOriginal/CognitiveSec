@@ -1,5 +1,6 @@
 import {
   Controller,
+  Delete,
   Get,
   Param,
   Post,
@@ -39,5 +40,37 @@ export class DocumentController {
     @Param('id') id: string,
   ) {
     return this.documentService.getDocument(id, user.organizationId, user.id);
+  }
+
+  @Delete(':id')
+  async deleteDocument(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id') id: string,
+  ) {
+    await this.documentService.deleteDocument(id, user.id, user.organizationId);
+    return { message: 'Document deleted successfully' };
+  }
+
+  @Post(':id/reindex')
+  async reindex(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id') id: string,
+  ) {
+    return this.documentService.reindex(id, user.organizationId, user.id);
+  }
+
+  @Get(':id/chunks')
+  async chunks(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id') id: string,
+  ) {
+    return this.documentService.getChunks(id, user.organizationId, user.id);
+  }
+  @Get(':id/status')
+  async status(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id') id: string,
+  ) {
+    return this.documentService.getStatus(id, user.organizationId, user.id);
   }
 }

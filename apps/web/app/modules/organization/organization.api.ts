@@ -1,0 +1,24 @@
+import { api } from "@/app/common/api";
+import { UpdateOrg } from "../documents/documents.types";
+
+const base_url = `${process.env.API_URL}/organizations`;
+
+export async function getMyOrg() {
+  const response = await api.get(`${base_url}/me`);
+  return response.data;
+}
+
+export async function updateOrganization(data: UpdateOrg) {
+  const response = await api.patch(`${base_url}/me`, { data });
+  return response.data;
+}
+
+export async function getMembers() {
+  const response = await api.get(`${base_url}/me/members`);
+  return response.data;
+}
+
+export async function removeMember(id: string) {
+  const response = await api.delete(`${base_url}/me/members/${id}`);
+  return response.data;
+}

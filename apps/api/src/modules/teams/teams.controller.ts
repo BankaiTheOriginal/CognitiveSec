@@ -15,7 +15,6 @@ import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import type { AuthenticatedUser } from 'src/common/decorators/current-user.decorator';
 import { CreateTeam, UpdateTeam } from './dto/teams.dto';
 import { Roles } from 'src/common/decorators/roles.decorator';
-import { Role } from 'generated/prisma/enums';
 
 @Controller('teams')
 @UseGuards(JwtGuard, TenantGuard)
@@ -64,12 +63,13 @@ export class TeamsController {
   }
 
   @Roles('ADMIN')
-  @Post(':id/members')
+  @Post(':id/members/:uid')
   async addUserToTeam(
     @CurrentUser() user: AuthenticatedUser,
+    @Param('uid') uid: string,
     @Param('id') id: string,
   ) {
-    return this.teamsService.addUserToTeam(user.organizationId, id, user.id);
+    return this.teamsService.addUserToTeam(user.organizationId, id, uid);
   }
 
   @Roles('ADMIN')
