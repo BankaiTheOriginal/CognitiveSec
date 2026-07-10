@@ -1,6 +1,6 @@
 import { api } from "@/app/common/api";
 
-const base_url = `${process.env.API_URL}/documents`;
+const base_url = `${process.env.NEXT_PUBLIC_API_URL}/documents`;
 
 export async function getDocuments() {
   const response = await api.get(base_url);

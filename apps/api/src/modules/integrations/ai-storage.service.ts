@@ -4,6 +4,7 @@ import {
   S3Client,
 } from '@aws-sdk/client-s3';
 import { Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import axios from 'axios';
 
 @Injectable()
@@ -11,19 +12,26 @@ export class AiStorageService {
   private readonly logger = new Logger(AiStorageService.name);
   private readonly r2Client: S3Client;
 
-  private readonly openRouterKey = process.env.OPENROUTER_API_KEY;
   private readonly openRouterUrl = 'https://openrouter.ai/api/v1';
+  private readonly openRouterKey: string;
+  constructor(private configService: ConfigService) {
+    const account_id = configService.getOrThrow<string>('r2.account_id');
+    const access_key = configService.getOrThrow<string>('r2.access_key');
+    const secret_access = configService.getOrThrow<string>(
+      'r2.secret_access_key',
+    );
+    this.openRouterKey = configService.getOrThrow<string>('openRouter_api_key');
 
-  constructor() {
     this.r2Client = new S3Client({
       region: 'auto',
-      endpoint: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+      endpoint: `https://${account_id}.r2.cloudflarestorage.com`,
       credentials: {
-        accessKeyId: process.env.R2_ACCESS_KEY || '',
-        secretAccessKey: process.env.R2_SECRET_ACCESS_KEY || '',
+        accessKeyId: access_key || '',
+        secretAccessKey: secret_access || '',
       },
     });
   }
+
   async uploadFileToR2(fileKey: string, content: string) {
     const command = new PutObjectCommand({
       Bucket: 'cognitive-sec',

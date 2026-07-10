@@ -10,7 +10,7 @@ import {
 
 const getBaseUrl = () => {
   const orgId = useAuthStore.getState().activeOrganizationId;
-  return `${process.env.API_URL}/organizations/${orgId}/chats`;
+  return `${process.env.NEXT_PUBLIC_API_URL}/organizations/${orgId}/chats`;
 };
 
 export async function getChats(): Promise<Chat[]> {
@@ -24,7 +24,7 @@ export async function getChat(id: string): Promise<Chat> {
 }
 
 export async function createChat(data: CreateChatInput): Promise<Chat> {
-  const response = await api.post(getBaseUrl(), data);
+  const response = await api.post(getBaseUrl(), { ...data });
   return response.data;
 }
 
@@ -36,7 +36,7 @@ export async function updateChatTitle(
   id: string,
   data: UpdateChatTitleInput,
 ): Promise<Chat> {
-  const response = await api.patch(`${getBaseUrl()}/${id}/title`, data);
+  const response = await api.patch(`${getBaseUrl()}/${id}/title`, { ...data });
   return response.data;
 }
 
@@ -49,6 +49,8 @@ export async function sendMessage(
   id: string,
   data: SendMessageInput,
 ): Promise<Message> {
-  const response = await api.post(`${getBaseUrl()}/${id}/messages`, data);
+  const response = await api.post(`${getBaseUrl()}/${id}/messages`, {
+    ...data,
+  });
   return response.data;
 }

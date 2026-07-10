@@ -1,11 +1,15 @@
+"use client";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "./modules/auth/auth.store";
 import { useEffect } from "react";
 import { me } from "./modules/auth/auth.api";
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
+const queryClient = new QueryClient();
+
+function AuthCheck({ children }: { children: React.ReactNode }) {
   const router = useRouter();
-  const { isAuthenticated, accessToken } = useAuthStore();
+  const { accessToken } = useAuthStore();
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -27,4 +31,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [accessToken, router]);
 
   return <>{children}</>;
+}
+
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <AuthCheck>{children}</AuthCheck>
+    </QueryClientProvider>
+  );
 }

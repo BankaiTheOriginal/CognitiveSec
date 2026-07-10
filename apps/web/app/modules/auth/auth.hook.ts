@@ -1,6 +1,7 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { login, me, signUp, switchWorkspace } from "./auth.api";
 import { useAuthStore } from "./auth.store";
+import { Login, SignUp } from "./auth.types";
 
 export const useMeQuery = () => {
   return useQuery({
@@ -11,7 +12,7 @@ export const useMeQuery = () => {
 
 export const useSwitchWorkspaceMutation = () => {
   return useMutation({
-    mutationFn: switchWorkspace,
+    mutationFn: (organizationId: string) => switchWorkspace(organizationId),
     onSuccess: (data) => {
       useAuthStore.getState().switchActiveWorkspace(data.activeOrganizationId);
     },
@@ -20,7 +21,7 @@ export const useSwitchWorkspaceMutation = () => {
 
 export const useLogin = () => {
   return useMutation({
-    mutationFn: login,
+    mutationFn: (data: Login) => login(data),
     onSuccess: (data) => {
       useAuthStore.getState().setAuthData({
         user: data.user,
@@ -34,6 +35,6 @@ export const useLogin = () => {
 
 export const useSignUp = () => {
   return useMutation({
-    mutationFn: signUp,
+    mutationFn: (data: SignUp) => signUp(data),
   });
 };

@@ -8,9 +8,16 @@ import { TeamsModule } from './modules/teams/teams.module';
 import { UsersModule } from './modules/users/users.module';
 import { OrganizationsModule } from './modules/organizations/organizations.module';
 import { QueueConfigModule } from './modules/queue/queue-config.module';
+import { ConfigModule } from '@nestjs/config';
+import configuration from 'configuration';
 
 @Module({
   imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+      load: [configuration],
+      envFilePath: ['.env', './apps/api/.env'],
+    }),
     QueueConfigModule,
     AuthModule,
     ChatModule,

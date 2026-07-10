@@ -1,7 +1,7 @@
 import { api } from "@/app/common/api";
 import { UpdateOrg } from "../documents/documents.types";
 
-const base_url = `${process.env.API_URL}/organizations`;
+const base_url = `${process.env.NEXT_PUBLIC_API_URL}/organizations`;
 
 export async function getMyOrg() {
   const response = await api.get(`${base_url}/me`);
@@ -9,7 +9,7 @@ export async function getMyOrg() {
 }
 
 export async function updateOrganization(data: UpdateOrg) {
-  const response = await api.patch(`${base_url}/me`, { data });
+  const response = await api.patch(`${base_url}/me`, { ...data });
   return response.data;
 }
 
