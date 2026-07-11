@@ -52,20 +52,23 @@ export const useAuthStore = create<AuthState>()(
         }
       },
       logout: async () => {
-        try {
-          await api.post("/auth/logout");
-        } catch (error) {
-          console.error("Backend logout confirmation rejected");
-        } finally {
-          set({
-            user: null,
-            accessToken: null,
-            activeOrganizationId: null,
-            role: "VIEWER",
-            isAuthenticated: false,
-          });
-          localStorage.removeItem("accessToken");
+        const token = useAuthStore.getState().accessToken;
+
+        if (token) {
+          try {
+            await api.post("/auth/logout");
+          } catch (error) {
+            console.error("Backend logout failed, clearing anyway");
+          }
         }
+        set({
+          user: null,
+          accessToken: null,
+          activeOrganizationId: null,
+          role: "VIEWER",
+          isAuthenticated: false,
+        });
+        localStorage.removeItem("accessToken");
       },
     }),
     {

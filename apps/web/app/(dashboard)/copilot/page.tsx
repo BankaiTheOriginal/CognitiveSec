@@ -1,10 +1,59 @@
 "use client";
 
-import { useGetChats } from "@/app/modules/chat/chat.hook";
+import { useMeQuery } from "@/app/modules/auth/auth.hook";
+import { useDeleteChat, useGetChats } from "@/app/modules/chat/chat.hook";
+import { Chat } from "@/app/modules/chat/chat.types";
 import { Plus } from "lucide-react";
+import { useEffect, useState } from "react";
+import { CiChat1, CiTrash } from "react-icons/ci";
 
 export default function page() {
-  const { data: chatData } = useGetChats();
+  const { data: chatData, isLoading: chatLoading } = useGetChats();
+  const { data: me } = useMeQuery();
+  const { mutateAsync: deleteChat } = useDeleteChat();
+  const [activeId, setActiveId] = useState<string | null>(null);
+  const firstName = me?.user.name.split(" ").shift();
+  // if (chatLoading) {
+  //   return <div>Loading...</div>;
+  // }
+
+  const mockChats: Chat[] = [
+    {
+      id: "chat_cl8y2n1000001",
+      title: "Company Announcements",
+      organizationId: "org_alpha_99",
+      teamId: null,
+      createdAt: "2026-07-10T09:00:00.000Z",
+    },
+    {
+      id: "chat_cl8y2n2110002",
+      title: "Q3 Product Launch Plan",
+      organizationId: "org_alpha_99",
+      teamId: "team_product_01",
+      createdAt: "2026-07-11T14:22:15.000Z",
+    },
+    {
+      id: "chat_cl8y2n3220003",
+      title: "Bug Triaging & Critical Fixes",
+      organizationId: "org_alpha_99",
+      teamId: "team_engineering_02",
+      createdAt: "2026-07-11T18:45:30.000Z",
+    },
+    {
+      id: "chat_cl8y2n4330004",
+      title: "Design System Feedback",
+      organizationId: "org_alpha_99",
+      teamId: "team_design_03",
+      createdAt: "2026-07-11T20:10:00.000Z",
+    },
+    {
+      id: "chat_cl8y2n5440005",
+      title: "Watercooler & Random Links",
+      organizationId: "org_alpha_99",
+      teamId: null,
+      createdAt: "2026-07-11T20:35:12.000Z",
+    },
+  ];
 
   return (
     <div className="grid grid-cols-4 gap-2 min-h-[90vh]">
@@ -21,9 +70,67 @@ export default function page() {
           </span>
           <div className="border-t border-slate-200"></div>
         </div>
-        <div className="bg-red-300 h-full">
-          {chatData!.length > 0 ? <div></div> : <div></div>}
+        <div className="h-full">
+          {mockChats && mockChats.length > 0 ? (
+            <div className="flex flex-col h-full gap-2">
+              {mockChats.map((chat) => {
+                const isActive = activeId === chat.id;
+                return (
+                  <button
+                    key={chat.id}
+                    onClick={() => setActiveId(chat.id)}
+                    className={`group w-full px-3 py-3 rounded-lg text-left transition-colors text-sm
+              ${
+                isActive
+                  ? "bg-indigo-50 text-indigo-500 border border-indigo-500"
+                  : "bg-transparent text-slate-500 hover:bg-gray-100 border border-slate-100"
+              }
+            `}
+                  >
+                    <div className="flex justify-between">
+                      <div className="flex items-center gap-2">
+                        <CiChat1 className="stroke-1 w-4 h-4" />
+                        <span className="truncate">{chat.title}</span>
+                      </div>
+                      <div
+                        className={`transition-opacity duration-200
+                ${isActive ? "text-indigo-500 hover:text-red-500" : "text-gray-400 hover:text-red-500"}
+                opacity-0 group-hover:opacity-100
+              `}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          deleteChat(chat.id);
+                          console.log("Delete clicked for", chat.id);
+                        }}
+                      >
+                        <CiTrash className="h-4 w-4" />
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="flex justify-center items-center h-full">
+              <div className="flex flex-col items-center gap-1">
+                <CiChat1 className="w-10 h-10 stroke-1 stroke-slate-300" />
+                <span className="text-slate-400 text-xs font-display font-semibold">
+                  No chat history yet
+                </span>
+                <span className="text-slate-400 text-xs font-display">
+                  Dive in create your first chat
+                </span>
+              </div>
+            </div>
+          )}
         </div>
+      </div>
+      <div className="flex flex-col col-span-2 bg-white shadow-sm border border-slate-200 rounded-xl">
+        {activeId === null ? (
+          <div className="flex flex-col h-full items-center justify-center">{`Hello ${firstName} where should we start today`}</div>
+        ) : (
+          <div></div>
+        )}
       </div>
     </div>
   );
