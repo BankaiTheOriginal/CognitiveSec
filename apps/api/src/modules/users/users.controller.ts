@@ -8,10 +8,10 @@ import { UpdateRole, UpdateUser } from './dto/users.dto';
 import { Roles } from 'src/common/decorators/roles.decorator';
 
 @Controller('users')
+@UseGuards(JwtGuard, TenantGuard)
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
-  @UseGuards(TenantGuard, JwtGuard)
   @Get('me')
   async me(@CurrentUser() user: AuthenticatedUser) {
     return this.usersService.me(user.id, user.organizationId);

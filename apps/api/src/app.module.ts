@@ -16,7 +16,7 @@ import configuration from 'configuration';
     ConfigModule.forRoot({
       isGlobal: true,
       load: [configuration],
-      envFilePath: ['.env', './apps/api/.env'],
+      envFilePath: ['.env'],
     }),
     QueueConfigModule,
     AuthModule,
@@ -29,4 +29,4 @@ import configuration from 'configuration';
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule {}
+export class AppModule { }

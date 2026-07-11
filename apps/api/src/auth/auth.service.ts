@@ -146,7 +146,7 @@ export class AuthService {
     const slug = `${organizationName.toLowerCase().replace(/\s+/g, '-')}-${crypto.randomUUID()}`;
 
     const organization = await this.prisma.organization.create({
-      data: { name, slug },
+      data: { name: organizationName, slug },
     });
 
     const user = await this.prisma.user.create({

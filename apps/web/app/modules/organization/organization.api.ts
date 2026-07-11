@@ -1,10 +1,17 @@
 import { api } from "@/app/common/api";
 import { UpdateOrg } from "../documents/documents.types";
+import { MyOrganizationsResponse } from "./organization.types";
 
 const base_url = `${process.env.NEXT_PUBLIC_API_URL}/organizations`;
 
 export async function getMyOrg() {
   const response = await api.get(`${base_url}/me`);
+  return response.data;
+}
+export async function getMyOrgs(): Promise<MyOrganizationsResponse> {
+  const response = await api.get<MyOrganizationsResponse>(
+    `${base_url}/me/organizations`,
+  );
   return response.data;
 }
 

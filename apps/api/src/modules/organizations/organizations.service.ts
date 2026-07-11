@@ -19,6 +19,15 @@ export class OrganizationsService {
     return organization;
   }
 
+  async myOrganizations(userId: string) {
+    const organizations = await this.prisma.membership.findMany({
+      where: { userId },
+      include: { organization: true },
+    });
+
+    return organizations;
+  }
+
   async updateOrganization(
     userId: string,
     organizationId: string,

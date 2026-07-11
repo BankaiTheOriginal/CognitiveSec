@@ -1,9 +1,11 @@
+// apps/web/app/modules/chat/chat.types.ts
+
 export interface Chat {
   id: string;
   title: string;
   organizationId: string;
   teamId?: string | null;
-  createdAt: Date;
+  createdAt: string;
 }
 
 export interface Message {
@@ -11,8 +13,12 @@ export interface Message {
   chatId: string;
   role: "user" | "assistant";
   text: string;
-  citations?: any[];
-  createdAt: Date;
+  citations?: {
+    documentId: string;
+    chunkId: string;
+    snippet: string;
+  }[];
+  createdAt: string;
 }
 
 export interface CreateChatInput {
@@ -25,4 +31,15 @@ export interface SendMessageInput {
 
 export interface UpdateChatTitleInput {
   title: string;
+}
+
+export type ChatsResponse = Chat[];
+export type ChatResponse = Chat;
+export type MessagesResponse = Message[];
+export type MessageResponse = Message;
+
+// Optional: For chat list item in UI
+export interface ChatListItem extends Chat {
+  lastMessage?: string;
+  lastMessageAt?: string;
 }

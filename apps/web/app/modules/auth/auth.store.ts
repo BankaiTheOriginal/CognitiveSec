@@ -8,9 +8,10 @@ export const useAuthStore = create<AuthState>()(
   persist(
     (set, get) => ({
       user: null,
+      _hasHydrated: false,
       accessToken: null,
       activeOrganizationId: null,
-      role: null,
+      role: "VIEWER",
       isAuthenticated: false,
 
       setAuthData: (data) => {
@@ -60,7 +61,7 @@ export const useAuthStore = create<AuthState>()(
             user: null,
             accessToken: null,
             activeOrganizationId: null,
-            role: null,
+            role: "VIEWER",
             isAuthenticated: false,
           });
           localStorage.removeItem("accessToken");
@@ -69,6 +70,9 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: "cognitive-sec-auth",
+      onRehydrateStorage: () => (state) => {
+        state!._hasHydrated = true;
+      },
     },
   ),
 );

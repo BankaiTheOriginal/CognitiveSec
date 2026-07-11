@@ -7,11 +7,11 @@ export class TeamsService {
   constructor(private readonly prisma: PrismaService) {}
 
   async getTeams(organization_id: string) {
-    const teams = await this.prisma.organization.findMany({
+    const teams = await this.prisma.team.findMany({
       where: { id: organization_id },
-      include: { teams: true },
     });
     if (!teams) throw new NotFoundException('No teams found');
+    return teams;
   }
 
   async createTeam(organization_id: string, data: CreateTeam) {

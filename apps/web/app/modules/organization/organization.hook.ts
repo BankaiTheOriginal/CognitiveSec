@@ -2,6 +2,7 @@ import { QueryClient, useMutation, useQuery } from "@tanstack/react-query";
 import {
   getMembers,
   getMyOrg,
+  getMyOrgs,
   removeMember,
   updateOrganization,
 } from "./organization.api";
@@ -11,6 +12,12 @@ export function useGetMyOrg() {
   return useQuery({
     queryKey: ["organization"],
     queryFn: getMyOrg,
+  });
+}
+export function useGetMyOrgs() {
+  return useQuery({
+    queryKey: ["organizations"],
+    queryFn: getMyOrgs,
   });
 }
 

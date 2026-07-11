@@ -109,7 +109,7 @@ export class AuthController {
     return { access_token, user_context };
   }
 
-  @UseGuards(TenantGuard, JwtGuard)
+  @UseGuards(JwtGuard, TenantGuard)
   @Get('me')
   async me(@CurrentUser() user: AuthenticatedUser) {
     return this.authService.me(user.id, user.organizationId);

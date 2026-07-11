@@ -63,7 +63,7 @@ export class ChatInferenceService {
       4. Always return your response as a valid, parsable JSON object matching this schema structure:
          {
            "answer": "Your detailed answer string incorporating inline markdown citations...",
-           "citationsUsed": ["document_id_1", "document_id_2"]
+           "citationsUsed": [{"document_id_1", "snippet"}, {"document_id_2", "snippet"}]
          }
     `;
 

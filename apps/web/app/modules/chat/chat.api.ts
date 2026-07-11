@@ -1,9 +1,15 @@
+// apps/web/app/modules/chat/chat.api.ts
+
 import { api } from "@/app/common/api";
 import { useAuthStore } from "../auth/auth.store";
-import {
+import type {
   Chat,
+  ChatListItem,
+  ChatsResponse,
   CreateChatInput,
   Message,
+  MessageResponse,
+  MessagesResponse,
   SendMessageInput,
   UpdateChatTitleInput,
 } from "./chat.types";
@@ -15,17 +21,17 @@ const getBaseUrl = () => {
 
 export async function getChats(): Promise<Chat[]> {
   const response = await api.get(getBaseUrl());
-  return response.data;
+  return response.data as Chat[];
 }
 
 export async function getChat(id: string): Promise<Chat> {
   const response = await api.get(`${getBaseUrl()}/${id}`);
-  return response.data;
+  return response.data as Chat;
 }
 
 export async function createChat(data: CreateChatInput): Promise<Chat> {
   const response = await api.post(getBaseUrl(), { ...data });
-  return response.data;
+  return response.data as Chat;
 }
 
 export async function deleteChat(id: string): Promise<void> {
@@ -37,12 +43,12 @@ export async function updateChatTitle(
   data: UpdateChatTitleInput,
 ): Promise<Chat> {
   const response = await api.patch(`${getBaseUrl()}/${id}/title`, { ...data });
-  return response.data;
+  return response.data as Chat;
 }
 
 export async function getMessages(id: string): Promise<Message[]> {
   const response = await api.get(`${getBaseUrl()}/${id}/messages`);
-  return response.data;
+  return response.data as Message[];
 }
 
 export async function sendMessage(
@@ -52,5 +58,5 @@ export async function sendMessage(
   const response = await api.post(`${getBaseUrl()}/${id}/messages`, {
     ...data,
   });
-  return response.data;
+  return response.data as Message;
 }

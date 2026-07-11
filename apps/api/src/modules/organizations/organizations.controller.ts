@@ -26,6 +26,10 @@ export class OrganizationsController {
       user.organizationId,
     );
   }
+  @Get('me/organizations')
+  async myOrganizations(@CurrentUser() user: AuthenticatedUser) {
+    return this.organizationsService.myOrganizations(user.id);
+  }
 
   @Patch('me')
   async updateOrganization(

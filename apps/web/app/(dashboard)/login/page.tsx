@@ -10,13 +10,16 @@ import { useLogin, useSignUp } from "@/app/modules/auth/auth.hook";
 import { zodResolver } from "@hookform/resolvers/zod";
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
+import { useRouter } from "next/navigation";
 
 export default function page() {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState("sign-in");
   const loginMutation = useLogin();
   const signUpMutation = useSignUp();
   async function onLoginSubmit(data: SignInInput) {
     await loginMutation.mutateAsync(data);
+    router.push("/copilot");
   }
   async function onSignUpSubmit(data: SignUpInput) {
     await signUpMutation.mutateAsync(data);

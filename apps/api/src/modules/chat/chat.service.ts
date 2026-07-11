@@ -18,9 +18,22 @@ export class ChatService {
       organization_id,
     );
 
+    const userTeams = await this.prisma.teamMemberships.findMany({
+      where: { userId: user_id, organizationId: membership.organizationId },
+      select: { teamId: true },
+    });
+
+    const teamIds = userTeams.map((t) => t.teamId);
+
     return this.prisma.chat.findMany({
-      where: { organizationId: membership.organizationId },
-      select: { title: true, createdAt: true },
+      where: {
+        AND: [
+          { organizationId: membership.organizationId },
+          {
+            OR: [{ teamId: { in: teamIds } }, { teamId: null }],
+          },
+        ],
+      },
     });
   }
 
@@ -81,7 +94,7 @@ export class ChatService {
     );
     const chat = await this.prisma.chat.findFirst({
       where: {
-        organizationId: membership.userId,
+        organizationId: membership.organizationId,
         id: chat_id,
       },
       select: { messages: true },

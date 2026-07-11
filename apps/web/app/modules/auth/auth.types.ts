@@ -1,4 +1,4 @@
-interface User {
+export interface User {
   id: string;
   name: string;
   email: string;
@@ -7,8 +7,9 @@ export interface AuthState {
   user: User | null;
   accessToken: string | null;
   activeOrganizationId: string | null;
-  role: "ADMIN" | "EDITOR" | "VIEWER" | null;
+  role: "ADMIN" | "EDITOR" | "VIEWER";
   isAuthenticated: boolean;
+  _hasHydrated: boolean;
 
   setAuthData: (data: {
     user: User;
