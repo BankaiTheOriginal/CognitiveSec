@@ -11,9 +11,9 @@ import {
   getDocuments,
   reindex,
   status,
-  upload,
+  uploadFiles,
 } from "./documents.api";
-
+import { toast } from "sonner";
 export function useDocuments() {
   return useQuery({
     queryKey: ["documents"],
@@ -24,9 +24,18 @@ export function useDocuments() {
 export function useUpload() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: upload,
-    onSuccess: () => {
+    mutationFn: (files: File[]) => uploadFiles(files),
+    onMutate: () => {
+      toast.success("Upload initialized", {
+        description: "Your files are being processed",
+      });
+    },
+    onSuccess: (data) => {
+      toast.success("Files uploaded successfully", {
+        description: `${data?.length || 0} file(s) queued for processing`,
+      });
       queryClient.invalidateQueries({ queryKey: ["documents"] });
+      queryClient.refetchQueries({ queryKey: ["documents"] });
     },
   });
 }

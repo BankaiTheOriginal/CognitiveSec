@@ -26,7 +26,7 @@ export class AuthController {
 
   @Post('login')
   async login(@Body() body: Login, @Res({ passthrough: true }) res: Response) {
-    const { tokens, user, role } = await this.authService.login(
+    const { tokens, user, role, organizationId } = await this.authService.login(
       body.email,
       body.password,
     );
@@ -39,7 +39,7 @@ export class AuthController {
       path: '/',
     });
     const access_token = tokens.access_token;
-    return { access_token, user, role };
+    return { access_token, user, role, organizationId };
   }
 
   @Post('sign-up')

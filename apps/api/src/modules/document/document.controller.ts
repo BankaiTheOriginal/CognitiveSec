@@ -4,15 +4,19 @@ import {
   Get,
   Param,
   Post,
-  UploadedFile,
+  UploadedFiles,
+  UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
+import { FilesInterceptor } from '@nestjs/platform-express';
 import { DocumentService } from './document.service';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import type { AuthenticatedUser } from 'src/common/decorators/current-user.decorator';
-import { FileInterceptor } from '@nestjs/platform-express';
+import { JwtGuard } from 'src/common/guards/jwt.guard';
+import { TenantGuard } from 'src/common/guards/tenant.guard';
 
 @Controller('documents')
+@UseGuards(JwtGuard, TenantGuard)
 export class DocumentController {
   constructor(private readonly documentService: DocumentService) {}
 
@@ -22,13 +26,13 @@ export class DocumentController {
   }
 
   @Post('upload')
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(FilesInterceptor('files'))
   async upload(
-    @UploadedFile() file: Express.Multer.File,
+    @UploadedFiles() files: Express.Multer.File[],
     @CurrentUser() user: AuthenticatedUser,
   ) {
-    return this.documentService.uploadDocument(
-      file,
+    return this.documentService.uploadDocuments(
+      files,
       user.id,
       user.organizationId,
     );

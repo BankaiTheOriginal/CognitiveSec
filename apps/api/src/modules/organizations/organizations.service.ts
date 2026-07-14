@@ -11,12 +11,15 @@ export class OrganizationsService {
   constructor(private readonly prisma: PrismaService) {}
 
   async myOrganization(userId: string, organizationId: string) {
-    const organization = await this.prisma.membership.findUnique({
+    const membership = await this.prisma.membership.findUnique({
       where: { userId_organizationId: { userId, organizationId } },
       include: { organization: true },
     });
+    const organization = membership?.organization;
+    if (!organization) throw new BadRequestException('No organization found');
+    const { id, name, slug } = organization;
 
-    return organization;
+    return { id, name, slug };
   }
 
   async myOrganizations(userId: string) {

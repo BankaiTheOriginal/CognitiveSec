@@ -124,11 +124,11 @@ model DocumentChunk {
   id String @id @default(cuid())
   documentId String @map("document_id")
   document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
-  organizationId String
+  organizationId String @map("organization_id")
   sectionTitle String? @map("section_title")
   content String
 
-  embedding Unsupported("vector(1536)")?
+  embedding Unsupported("vector(2048)")?
 
   @@index([organizationId])
   @@index([documentId])

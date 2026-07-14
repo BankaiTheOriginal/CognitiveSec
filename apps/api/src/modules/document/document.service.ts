@@ -6,9 +6,7 @@ import {
 import { PrismaService } from 'src/prisma.service';
 import { AiStorageService } from '../integrations/ai-storage.service';
 import { DocumentConsumerProcessor } from './document-consumer.processor';
-import multer from 'multer';
 import { DocumentProducerService } from './document-producer.service';
-import { NotFoundError } from 'rxjs';
 import * as crypto from 'crypto';
 @Injectable()
 export class DocumentService {
@@ -25,7 +23,7 @@ export class DocumentService {
       select: { documents: true },
     });
 
-    return documents;
+    return documents?.documents;
   }
 
   async uploadDocument(
@@ -35,37 +33,40 @@ export class DocumentService {
   ) {
     const fileName = file.originalname;
     const fileKey = `${fileName.toLowerCase().replace(/\s+/g, '-')}-${crypto.randomUUID()}`;
+    await this.r2.uploadFileToR2(fileKey, file.buffer);
+
     const fileContent = await this.documentConsumer.extractTextFromBuffer(
       file.buffer,
       fileName,
     );
 
-    const [result, document, response] = await Promise.all([
-      this.prisma.membership.findUnique({
-        where: {
-          userId_organizationId: { userId, organizationId: organization_id },
-        },
-      }),
-      this.r2.uploadFileToR2(fileKey, fileContent),
-      (async () => {
-        const document = await this.prisma.document.create({
-          data: {
-            name: fileName,
-            fileKey,
-            type: file.mimetype,
-            uploadedBy: userId,
-            organizationId: organization_id,
-          },
-        });
-        await this.documentProducer.queueDocumentForParsing({
-          documentId: document.id,
-          organizationId: organization_id,
-          fileKey,
-          fileName,
-        });
-      })(),
-    ]);
-    return response;
+    const document = await this.prisma.document.create({
+      data: {
+        name: fileName,
+        fileKey,
+        type: file.mimetype,
+        uploadedBy: userId,
+        organizationId: organization_id,
+      },
+    });
+    await this.documentProducer.queueDocumentForParsing({
+      documentId: document.id,
+      organizationId: organization_id,
+      fileKey,
+      fileName,
+    });
+    return document;
+  }
+
+  async uploadDocuments(
+    files: Express.Multer.File[],
+    userId: string,
+    organization_id: string,
+  ) {
+    const results = await Promise.all(
+      files.map((file) => this.uploadDocument(file, userId, organization_id)),
+    );
+    return results;
   }
 
   async getDocument(

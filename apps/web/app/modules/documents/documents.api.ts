@@ -1,18 +1,24 @@
 import { api } from "@/app/common/api";
+import { Document } from "./documents.types";
 
 const base_url = `${process.env.NEXT_PUBLIC_API_URL}/documents`;
 
-export async function getDocuments() {
+export async function getDocuments(): Promise<Document[]> {
   const response = await api.get(base_url);
   return response.data;
 }
 
-export async function upload(file: File) {
-  const response = await api.post(`${base_url}/upload`, { file });
+export async function uploadFiles(files: File[]) {
+  const formData = new FormData();
+  files.forEach((file) => formData.append("files", file));
+
+  const response = await api.post(`${base_url}/upload`, formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
   return response.data;
 }
 
-export async function getDocument(id: string) {
+export async function getDocument(id: string): Promise<Document> {
   const response = await api.get(`${base_url}/${id}`);
   return response.data;
 }

@@ -91,9 +91,10 @@ export class AuthService {
         'User is not associated with any organization',
       );
     const activeMembership = memberships[0];
+    const organizationId = activeMembership.organizationId;
     const role = activeMembership.role;
     const tokens = await this.generateTokenPair(user, activeMembership);
-    return { tokens, user, role };
+    return { tokens, user, role, organizationId };
   }
 
   async switchWorkspace(userId: string, targetOrganizationId: string) {

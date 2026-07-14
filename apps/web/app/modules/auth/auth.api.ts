@@ -5,16 +5,19 @@ import { useAuthStore } from "./auth.store";
 const base_url = `${process.env.NEXT_PUBLIC_API_URL}/auth`;
 export async function login(data: Login) {
   const response = await api.post(`${base_url}/login`, { ...data });
-  const { access_token, user, role } = response.data;
+  const { access_token, user, role, organizationId } = response.data;
 
-  return { access_token, user, role };
+  return { access_token, user, role, organizationId };
 }
 
 export async function signUp(data: SignUp) {
   await api.post(`${base_url}/sign-up`, { ...data });
 }
 
-export async function me(): Promise<{ user: User; role: "ADMIN" | "EDITOR" | "VIEWER" }> {
+export async function me(): Promise<{
+  user: User;
+  role: "ADMIN" | "EDITOR" | "VIEWER";
+}> {
   const response = await api.get(`${base_url}/me`);
   const { user, role } = response.data;
 

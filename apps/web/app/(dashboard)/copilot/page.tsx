@@ -1,18 +1,27 @@
 "use client";
 
 import { useMeQuery } from "@/app/modules/auth/auth.hook";
+import { useAuthStore } from "@/app/modules/auth/auth.store";
 import { useDeleteChat, useGetChats } from "@/app/modules/chat/chat.hook";
 import { Chat } from "@/app/modules/chat/chat.types";
-import { Plus } from "lucide-react";
+import { useDocuments } from "@/app/modules/documents/documents.hook";
+import { useGetMyOrg } from "@/app/modules/organization/organization.hook";
+import { Book, Plus } from "lucide-react";
 import { useEffect, useState } from "react";
 import { CiChat1, CiTrash } from "react-icons/ci";
-
 export default function page() {
   const { data: chatData, isLoading: chatLoading } = useGetChats();
   const { data: me } = useMeQuery();
+  const { data: documents } = useDocuments();
+  const { data: organization } = useGetMyOrg();
   const { mutateAsync: deleteChat } = useDeleteChat();
   const [activeId, setActiveId] = useState<string | null>(null);
   const firstName = me?.user.name.split(" ").shift();
+  const loadedDocuments = documents?.filter(
+    (document) => document.status === "READY",
+  );
+
+  console.log(organization);
   // if (chatLoading) {
   //   return <div>Loading...</div>;
   // }
@@ -56,8 +65,8 @@ export default function page() {
   ];
 
   return (
-    <div className="grid grid-cols-4 gap-2 min-h-[90vh]">
-      <div className="flex flex-col bg-white p-4 shadow-sm border border-slate-200 rounded-xl gap-4">
+    <div className="grid grid-cols-4 grid-rows-2 gap-2 min-h-[90vh]">
+      <div className="flex flex-col row-span-2 bg-white p-4 shadow-sm border border-slate-200 rounded-xl gap-4">
         <div className="flex justify-center mt-4">
           <button className="flex items-center justify-center bg-indigo-600 py-3 px-10 rounded-xl text-white text-xs gap-2 w-[380px]">
             <Plus className="h-4 w-4" />
@@ -125,12 +134,45 @@ export default function page() {
           )}
         </div>
       </div>
-      <div className="flex flex-col col-span-2 bg-white shadow-sm border border-slate-200 rounded-xl">
+      <div className="flex flex-col col-span-2 row-span-2 bg-white shadow-sm border border-slate-200 rounded-xl">
         {activeId === null ? (
-          <div className="flex flex-col h-full items-center justify-center">{`Hello ${firstName} where should we start today`}</div>
+          <div className="flex flex-col h-full items-center justify-center">
+            <div className="flex flex-col gap-4">
+              <span className="text-3xl ">
+                Hello{" "}
+                <span className="bg-gradient-to-r from-indigo-600 via-purple-500 to-pink-900 bg-[length:200%_auto] bg-clip-text font-extrabold text-transparent animate-gradient">{`${firstName}`}</span>{" "}
+                where should we start today
+              </span>
+              <input
+                placeholder={`Ask me anything about ${organization?.name}`}
+                className="border-1 w-full p-4 rounded-full border-slate-500"
+              ></input>
+            </div>
+          </div>
         ) : (
           <div></div>
         )}
+      </div>
+      <div className="flex flex-col row-span-1 bg-white shadow-sm border border-slate-200 rounded-xl p-4">
+        <div className="flex flex-col gap-2">
+          <div className="flex justify-between">
+            <div className="flex gap-2 items-center">
+              <Book className="w-4 h-4 text-indigo-600" />
+              <span className="font-display text-xs font-semibold">
+                Company Library
+              </span>
+            </div>
+            <div className="flex">
+              {loadedDocuments && loadedDocuments?.length > 0 ? (
+                <span className="text-xs font-display text-slate-500 font-semibold">{`${loadedDocuments.length} Loaded`}</span>
+              ) : (
+                <span className="text-xs font-display text-slate-500 font-semibold">
+                  No Documents Loaded
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

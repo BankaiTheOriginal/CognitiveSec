@@ -13,8 +13,8 @@ export const useMeQuery = () => {
 export const useSwitchWorkspaceMutation = () => {
   return useMutation({
     mutationFn: (organizationId: string) => switchWorkspace(organizationId),
-    onSuccess: (data) => {
-      useAuthStore.getState().switchActiveWorkspace(data.activeOrganizationId);
+    onSuccess: (data, organizationId) => {
+      useAuthStore.getState().switchActiveWorkspace(organizationId);
     },
   });
 };
@@ -26,7 +26,7 @@ export const useLogin = () => {
       useAuthStore.getState().setAuthData({
         user: data.user,
         accessToken: data.access_token,
-        organizationId: data.user.organizationId,
+        organizationId: data.organizationId,
         role: data.role,
       });
     },

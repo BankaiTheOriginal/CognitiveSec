@@ -6,7 +6,8 @@ const base_url = `${process.env.NEXT_PUBLIC_API_URL}/organizations`;
 
 export async function getMyOrg() {
   const response = await api.get(`${base_url}/me`);
-  return response.data;
+  const { id, name, slug } = response.data;
+  return { id, name, slug };
 }
 export async function getMyOrgs(): Promise<MyOrganizationsResponse> {
   const response = await api.get<MyOrganizationsResponse>(

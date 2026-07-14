@@ -26,13 +26,13 @@ export class AiStorageService {
       region: 'auto',
       endpoint: `https://${account_id}.r2.cloudflarestorage.com`,
       credentials: {
-        accessKeyId: access_key || '',
-        secretAccessKey: secret_access || '',
+        accessKeyId: access_key,
+        secretAccessKey: secret_access,
       },
     });
   }
 
-  async uploadFileToR2(fileKey: string, content: string) {
+  async uploadFileToR2(fileKey: string, content: any) {
     const command = new PutObjectCommand({
       Bucket: 'cognitive-sec',
       Key: fileKey,
@@ -72,7 +72,7 @@ export class AiStorageService {
       const response = await axios.post(
         `${this.openRouterUrl}/embeddings`,
         {
-          model: 'openai/text-embedding-3-small',
+          model: 'nvidia/llama-nemotron-embed-vl-1b-v2:free',
           input: text,
         },
         {

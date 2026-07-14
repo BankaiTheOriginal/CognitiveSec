@@ -44,6 +44,7 @@ export const useAuthStore = create<AuthState>()(
             accessToken: access_token,
             activeOrganizationId: organizationId,
             role: user_context.role,
+            isAuthenticated: true,
           });
           localStorage.setItem("accessToken", access_token);
         } catch (error) {
