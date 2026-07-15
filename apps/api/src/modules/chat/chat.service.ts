@@ -37,7 +37,7 @@ export class ChatService {
     });
   }
 
-  async createChat(organization_id: string, user_id: string, data: CreateChat) {
+  async createChat(organization_id: string, user_id: string, title: string) {
     const membership = await this.authService.findUserInOrg(
       user_id,
       organization_id,
@@ -45,7 +45,7 @@ export class ChatService {
 
     const chat = await this.prisma.chat.create({
       data: {
-        title: data.title,
+        title,
         organizationId: membership.organizationId,
       },
     });

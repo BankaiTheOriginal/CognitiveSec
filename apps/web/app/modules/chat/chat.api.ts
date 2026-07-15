@@ -29,8 +29,8 @@ export async function getChat(id: string): Promise<Chat> {
   return response.data as Chat;
 }
 
-export async function createChat(data: CreateChatInput): Promise<Chat> {
-  const response = await api.post(getBaseUrl(), { ...data });
+export async function createChat(title: string): Promise<Chat> {
+  const response = await api.post(getBaseUrl(), { title });
   return response.data as Chat;
 }
 

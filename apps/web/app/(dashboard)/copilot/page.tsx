@@ -2,26 +2,40 @@
 
 import { useMeQuery } from "@/app/modules/auth/auth.hook";
 import { useAuthStore } from "@/app/modules/auth/auth.store";
-import { useDeleteChat, useGetChats } from "@/app/modules/chat/chat.hook";
-import { Chat } from "@/app/modules/chat/chat.types";
+import {
+  useCreateChat,
+  useDeleteChat,
+  useGetChats,
+} from "@/app/modules/chat/chat.hook";
+import { Chat, CreateChatInput } from "@/app/modules/chat/chat.types";
 import { useDocuments } from "@/app/modules/documents/documents.hook";
 import { useGetMyOrg } from "@/app/modules/organization/organization.hook";
-import { Book, Plus } from "lucide-react";
+import { ArrowUp, Book, Plus } from "lucide-react";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { CiChat1, CiTrash } from "react-icons/ci";
 export default function page() {
   const { data: chatData, isLoading: chatLoading } = useGetChats();
   const { data: me } = useMeQuery();
   const { data: documents } = useDocuments();
+  const { mutateAsync: createChat } = useCreateChat();
   const { data: organization } = useGetMyOrg();
+
   const { mutateAsync: deleteChat } = useDeleteChat();
   const [activeId, setActiveId] = useState<string | null>(null);
   const firstName = me?.user.name.split(" ").shift();
   const loadedDocuments = documents?.filter(
     (document) => document.status === "READY",
   );
+  const [chat, setChat] = useState<string>("");
+  function createChatTitle(value: string) {
+    const title = value.split(" ").slice(0, 5).join(" ");
+    setChat(title);
+  }
+  function handleNewChat(title: string) {
+    createChat(title);
+  }
 
-  console.log(organization);
   // if (chatLoading) {
   //   return <div>Loading...</div>;
   // }
@@ -80,9 +94,9 @@ export default function page() {
           <div className="border-t border-slate-200"></div>
         </div>
         <div className="h-full">
-          {mockChats && mockChats.length > 0 ? (
+          {chatData && chatData.length > 0 ? (
             <div className="flex flex-col h-full gap-2">
-              {mockChats.map((chat) => {
+              {chatData.map((chat) => {
                 const isActive = activeId === chat.id;
                 return (
                   <button
@@ -143,18 +157,27 @@ export default function page() {
                 <span className="bg-gradient-to-r from-indigo-600 via-purple-500 to-pink-900 bg-[length:200%_auto] bg-clip-text font-extrabold text-transparent animate-gradient">{`${firstName}`}</span>{" "}
                 where should we start today
               </span>
-              <input
-                placeholder={`Ask me anything about ${organization?.name}`}
-                className="border-1 w-full p-4 rounded-full border-slate-500"
-              ></input>
+              <div className="flex relative items-center">
+                <input
+                  placeholder={`Ask me anything about ${organization?.name}`}
+                  className="border w-full p-4 rounded-full border-slate-200 focus:border-indigo-500 focus:outline-none placeholder:text-sm"
+                  onChange={(e) => createChatTitle(e.target.value)}
+                ></input>
+                <button
+                  className=" absolute bg-indigo-500 p-2 rounded-full text-white right-2 z-10 transition delay-100 hover:bg-indigo-800 cursor-pointer"
+                  onClick={() => handleNewChat(chat)}
+                >
+                  <ArrowUp className="" />
+                </button>
+              </div>
             </div>
           </div>
         ) : (
           <div></div>
         )}
       </div>
-      <div className="flex flex-col row-span-1 bg-white shadow-sm border border-slate-200 rounded-xl p-4">
-        <div className="flex flex-col gap-2">
+      <div className="flex flex-col row-span-1 bg-white shadow-sm border border-slate-200 rounded-xl p-4 justify-between">
+        <div className="flex flex-col gap-4">
           <div className="flex justify-between">
             <div className="flex gap-2 items-center">
               <Book className="w-4 h-4 text-indigo-600" />
@@ -172,7 +195,40 @@ export default function page() {
               )}
             </div>
           </div>
+          <div className="border-t-1 border border-slate-100"></div>
+          {loadedDocuments &&
+            loadedDocuments.slice(0, 3).map((document) => (
+              <Link
+                key={document.id}
+                className="flex flex-col transition hover:bg-slate-50 rounded-lg border border-slate-100"
+                href={`/knowledge`}
+              >
+                <div className="flex gap-2 items-center  rounded-lg p-2">
+                  <div className="flex bg-indigo-100 py-3 px-1 rounded-lg items-center">
+                    <span className="uppercase text-[9px] tracking-tight text-indigo-800 font-semibold">
+                      {document.name
+                        .slice(document.name.lastIndexOf(".") + 1)
+                        .toLowerCase()}
+                    </span>
+                  </div>
+                  <div className="flex flex-col truncate">
+                    <span className="text-xs font-semibold font-display truncate">
+                      {document.name}
+                    </span>
+                    <span className="text-xs text-slate-300 font-display">
+                      {document.chunksCount} vectors
+                    </span>
+                  </div>
+                </div>
+              </Link>
+            ))}
         </div>
+        <Link
+          className="flex justify-center items-center bg-slate-100 border-1 border-slate-200 p-2 rounded-lg  text-[10px] font-bold text-slate-500 tracking-tight"
+          href={`/knowledge`}
+        >
+          Manage Full Library
+        </Link>
       </div>
     </div>
   );

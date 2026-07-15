@@ -28,9 +28,13 @@ export class ChatController {
   @Post('')
   async createChat(
     @CurrentUser() user: AuthenticatedUser,
-    @Body() body: CreateChat,
+    @Body() body: { title: string },
   ) {
-    return this.chatService.createChat(user.organizationId, user.id, body);
+    return this.chatService.createChat(
+      user.organizationId,
+      user.id,
+      body.title,
+    );
   }
 
   @Get(':id')
