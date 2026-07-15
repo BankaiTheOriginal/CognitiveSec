@@ -4,7 +4,7 @@ import { sendMessage } from "@/app/modules/chat/chat.api";
 import { useGetMessages, useSendMessage } from "@/app/modules/chat/chat.hook";
 import { useGetMyOrg } from "@/app/modules/organization/organization.hook";
 import { ArrowUp } from "lucide-react";
-import { useParams, useSearchParams } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
 export default function Conversation() {
@@ -16,7 +16,7 @@ export default function Conversation() {
   const { data: messages, isFetching } = useGetMessages(chatIdString);
   const { data: organization } = useGetMyOrg();
   const { data: me } = useMeQuery();
-
+  const router = useRouter();
   const [message, setMessage] = useState("");
   const [optimisticMessage, setOptimisticMessage] = useState<string | null>(
     null,
@@ -30,21 +30,43 @@ export default function Conversation() {
   const handleSubmit = (value: string) => {
     setMessage("");
     setOptimisticMessage(value);
-    mutate({ id: chatIdString, data: { message: value } });
+    mutate(
+      { id: chatIdString, data: { message: value } },
+      {
+        onSuccess: () => {
+          setOptimisticMessage(null);
+        },
+      },
+    );
   };
 
   useEffect(() => {
-    if (pendingMessage && messages) {
-      setOptimisticMessage(pendingMessage);
+    if (!pendingMessage) return;
 
-      mutate({ id: chatIdString, data: { message: pendingMessage } });
-    }
-  }, [pendingMessage, message, chatIdString, mutate]);
+    setOptimisticMessage(pendingMessage);
+
+    mutate(
+      { id: chatIdString, data: { message: pendingMessage } },
+      {
+        onSuccess: () => {
+          setOptimisticMessage(null);
+          router.replace(`/copilot/${chatIdString}`);
+        },
+      },
+    );
+  }, [pendingMessage, chatIdString, mutate, router]);
 
   const displayMessages =
-    optimisticMessage && !isFetching
+    optimisticMessage && isSending
       ? [
           ...(messages || []),
+          {
+            id: "optimistic-user",
+            chatId: chatIdString,
+            role: "user" as const,
+            text: optimisticMessage,
+            createdAt: new Date().toISOString(),
+          },
           {
             id: "thinking",
             chatId: chatIdString,
