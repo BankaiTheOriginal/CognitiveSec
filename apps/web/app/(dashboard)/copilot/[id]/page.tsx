@@ -1,3 +1,5 @@
+import Conversation from "@/components/parts/copilot/Conversation";
+
 export default function page() {
-  return <div>Copilot Session Detail</div>;
+  return <Conversation />;
 }

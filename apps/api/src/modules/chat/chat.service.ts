@@ -102,7 +102,7 @@ export class ChatService {
 
     if (!chat) throw new NotFoundException('Chat messages not found');
 
-    return chat;
+    return chat.messages;
   }
 
   async sendMessage(
