@@ -8,11 +8,7 @@ import {
   sendMessage,
   updateChatTitle,
 } from "./chat.api";
-import {
-  CreateChatInput,
-  SendMessageInput,
-  UpdateChatTitleInput,
-} from "./chat.types";
+import { SendMessageInput, UpdateChatTitleInput } from "./chat.types";
 
 export const useGetChats = () => {
   return useQuery({
@@ -31,7 +27,7 @@ export const useGetChat = (id: string) => {
 export const useCreateChat = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (title: string) => createChat(title),
+    mutationFn: () => createChat(),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["chats"] });
     },
@@ -73,6 +69,8 @@ export const useSendMessage = () => {
     mutationFn: ({ id, data }: { id: string; data: SendMessageInput }) =>
       sendMessage(id, data),
     onSuccess: (returnedData, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["chats"] });
+      queryClient.invalidateQueries({ queryKey: ["chats", variables.id] });
       queryClient.invalidateQueries({
         queryKey: ["chats", variables.id, "messages"],
       });

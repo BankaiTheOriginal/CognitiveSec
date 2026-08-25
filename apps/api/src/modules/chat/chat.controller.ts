@@ -13,7 +13,6 @@ import { JwtGuard } from 'src/common/guards/jwt.guard';
 import { TenantGuard } from 'src/common/guards/tenant.guard';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import type { AuthenticatedUser } from 'src/common/decorators/current-user.decorator';
-import { CreateChat } from './dto/chat.dto';
 
 @Controller('organizations/:orgId/chats')
 @UseGuards(JwtGuard, TenantGuard)
@@ -28,7 +27,7 @@ export class ChatController {
   @Post('')
   async createChat(
     @CurrentUser() user: AuthenticatedUser,
-    @Body() body: { title: string },
+    @Body() body: { title?: string } = {},
   ) {
     return this.chatService.createChat(
       user.organizationId,

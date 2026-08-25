@@ -1,6 +1,6 @@
 export enum Role {
   ADMIN = "ADMIN",
-  MEMBER = "MEMBER",
+  EDITOR = "EDITOR",
   VIEWER = "VIEWER",
 }
 
@@ -10,6 +10,19 @@ export interface IOrganization {
   slug: string;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface OrganizationActivityEvent {
+  id: string;
+  organizationId: string;
+  actorId: string | null;
+  actorName: string | null;
+  action: string;
+  entityType: string;
+  entityId: string | null;
+  message: string;
+  metadata: Record<string, unknown> | null;
+  createdAt: string;
 }
 
 export interface IMembershipWithOrganization {

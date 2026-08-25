@@ -1,5 +1,6 @@
-import { QueryClient, useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+  getActivity,
   getMembers,
   getMyOrg,
   getMyOrgs,
@@ -22,11 +23,12 @@ export function useGetMyOrgs() {
 }
 
 export function useUpdateOrganization() {
-  const queryClient = new QueryClient();
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (data: UpdateOrg) => updateOrganization(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["organization"] });
+      queryClient.invalidateQueries({ queryKey: ["organization", "activity"] });
     },
   });
 }
@@ -39,11 +41,19 @@ export function useGetMembers() {
 }
 
 export function useRemoveMember() {
-  const queryClient = new QueryClient();
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => removeMember(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["organization", "members"] });
+      queryClient.invalidateQueries({ queryKey: ["organization", "activity"] });
     },
+  });
+}
+
+export function useGetOrganizationActivity() {
+  return useQuery({
+    queryKey: ["organization", "activity"],
+    queryFn: getActivity,
   });
 }

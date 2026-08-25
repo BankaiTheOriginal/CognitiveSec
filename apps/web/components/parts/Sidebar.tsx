@@ -4,8 +4,9 @@ import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import { BiBrain } from "react-icons/bi";
 import { CiChat1 } from "react-icons/ci";
-import { FiLogOut, FiSettings, FiUsers, FiCpu } from "react-icons/fi";
+import { FiLogOut, FiSettings } from "react-icons/fi";
 import { useAuthStore } from "@/app/modules/auth/auth.store";
+import { useGetMyOrg } from "@/app/modules/organization/organization.hook";
 
 const SidebarSects = [
   {
@@ -18,11 +19,6 @@ const SidebarSects = [
     icon: BiBrain,
     location: "/knowledge",
   },
-  //   {
-  //     name: "Team Settings",
-  //     icon: FiUsers,
-  //     location: "/settings/team",
-  //   },
   {
     name: "Settings",
     icon: FiSettings,
@@ -34,6 +30,7 @@ export default function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const { user, role, logout } = useAuthStore();
+  const { data: organization } = useGetMyOrg();
 
   const handleLogout = async () => {
     await logout();
@@ -66,14 +63,9 @@ export default function Sidebar() {
       <div className="flex flex-col gap-6">
         <div className="flex items-center gap-3 px-6 h-20 border-b border-[#1B1E26]">
           <div className="flex flex-col">
-            <span className="text-white text-base font-bold tracking-tight font-display bg-gradient-to-r from-white via-slate-100 to-indigo-300 bg-clip-text text-transparent">
+            <span className="text-white text-base font-bold tracking-tight font-display text-xl">
               CognitiveSec
             </span>
-            <div className="flex items-center gap-1.5">
-              <span className="text-[10px] text-slate-400 font-medium uppercase tracking-wider">
-                Suite v1.0
-              </span>
-            </div>
           </div>
         </div>
 
@@ -85,7 +77,7 @@ export default function Sidebar() {
                   Active Workspace
                 </span>
                 <span className="text-slate-200 text-xs font-semibold truncate mt-0.5">
-                  Default Organization
+                  {organization?.name}
                 </span>
               </div>
               <div className="flex items-center gap-1.5">
@@ -100,9 +92,6 @@ export default function Sidebar() {
         )}
 
         <div className="flex flex-col gap-2.5 px-4">
-          <span className="px-2 text-[10px] font-bold text-slate-500 uppercase tracking-widest font-display">
-            Main Applications
-          </span>
           <div className="flex flex-col gap-1">
             {SidebarSects.map((item) => {
               const isActive =

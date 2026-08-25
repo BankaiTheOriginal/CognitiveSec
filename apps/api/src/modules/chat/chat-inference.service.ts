@@ -1,13 +1,13 @@
 // src/modules/chat/chat-inference.service.ts
 import {
   Injectable,
-  UnauthorizedException,
   NotFoundException,
 } from '@nestjs/common';
 import { AiStorageService } from '../integrations/ai-storage.service';
 import axios from 'axios';
 import { PrismaService } from 'src/prisma.service';
-import { DocumentConsumerProcessor } from '../document/document-consumer.processor';
+
+const OPENROUTER_MODEL = 'nvidia/nemotron-3-super-120b-a12b:free';
 
 @Injectable()
 export class ChatInferenceService {
@@ -34,9 +34,16 @@ export class ChatInferenceService {
     const embeddingString = `[${queryEmbedding.join(',')}]`;
 
     const contextMatches = await this.prisma.$queryRawUnsafe<any[]>(`
-      SELECT id, document_id, section_title, content, (embedding <=> '${embeddingString}'::vector) AS distance
-      FROM document_chunks
-      WHERE organization_id = '${organizationId}'
+      SELECT
+        dc.id,
+        dc.document_id,
+        d.name AS document_name,
+        dc.section_title,
+        dc.content,
+        (dc.embedding <=> '${embeddingString}'::vector) AS distance
+      FROM document_chunks dc
+      INNER JOIN documents d ON d.id = dc.document_id
+      WHERE dc.organization_id = '${organizationId}'
       ORDER BY distance ASC
       LIMIT 4;
     `);
@@ -44,7 +51,7 @@ export class ChatInferenceService {
     const groundTruthContextText = contextMatches
       .map(
         (match, index) =>
-          `[Source Reference Document ID: ${match.document_id} | Index: ${index + 1}] Title: ${match.section_title || 'N/A'}\nContent: ${match.content}`,
+          `[Source ${index + 1} | Document ID: ${match.document_id} | Chunk ID: ${match.id} | Document: ${match.document_name} | Section: ${match.section_title || 'N/A'}]\nContent: ${match.content}`,
       )
       .join('\n\n---\n\n');
 
@@ -59,18 +66,26 @@ export class ChatInferenceService {
       STRICT OPERATIONAL DIRECTIVES:
       1. Base your answer *only* on the provided ground truth data context archive above.
       2. If the context data does not contain the answer to the user's query, state clearly: "I cannot find a reliable answer to this question within the uploaded organization knowledge documents." Do not invent details.
-      3. For every claim you make, cite your source using the format: [Source Reference Document ID: <uuid>].
+      3. For every claim you make, cite your source using the format: [Source <number>].
       4. Always return your response as a valid, parsable JSON object matching this schema structure:
          {
-           "answer": "Your detailed answer string incorporating inline markdown citations...",
-           "citationsUsed": [{"document_id_1", "snippet"}, {"document_id_2", "snippet"}]
+           "answer": "Your detailed answer string incorporating inline citations...",
+           "citationsUsed": [
+             {
+               "documentId": "uuid",
+               "chunkId": "uuid",
+               "documentName": "Document title",
+               "sectionTitle": "Section title or null",
+               "snippet": "Relevant text excerpt"
+             }
+           ]
          }
     `;
 
     const response = await axios.post(
       'https://openrouter.ai/api/v1/chat/completions',
       {
-        model: 'nvidia/nemotron-3-super-120b-a12b:free',
+        model: OPENROUTER_MODEL,
         messages: [
           { role: 'system', content: runtimeSystemPrompt },
           { role: 'user', content: userQueryMessage },
@@ -89,6 +104,14 @@ export class ChatInferenceService {
       response.data.choices[0].message.content,
     );
 
+    const citationsUsed = contextMatches.map((match) => ({
+      documentId: match.document_id,
+      chunkId: match.id,
+      documentName: match.document_name,
+      sectionTitle: match.section_title,
+      snippet: match.content,
+    }));
+
     return await this.prisma.$transaction(async (tx) => {
       await tx.message.create({
         data: { chatId, role: 'user', text: userQueryMessage },
@@ -99,11 +122,58 @@ export class ChatInferenceService {
           chatId,
           role: 'assistant',
           text: completionPayload.answer,
-          citations: completionPayload.citationsUsed,
+          citations: citationsUsed,
         },
       });
 
       return savedAssistantMessage;
     });
+  }
+
+  async generateChatTitle(userMessage: string) {
+    const systemPrompt = `
+      You create short, helpful chat titles for a conversation app.
+      Return only valid JSON matching this schema:
+      {
+        "title": "Concise Title Case title"
+      }
+      Rules:
+      - Use 2 to 6 words.
+      - Capture the user's intent, not the full sentence.
+      - Avoid quotes, punctuation, emojis, and filler words.
+      - Do not prepend labels like "Chat:" or "Title:".
+      - If the message is very broad, still produce a useful generic title.
+    `;
+
+    const response = await axios.post(
+      'https://openrouter.ai/api/v1/chat/completions',
+      {
+        model: OPENROUTER_MODEL,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userMessage },
+        ],
+        response_format: { type: 'json_object' },
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+      },
+    );
+
+    const completionPayload = JSON.parse(
+      response.data.choices[0].message.content,
+    ) as { title?: string };
+
+    const normalizedTitle = completionPayload.title?.trim();
+    if (!normalizedTitle) {
+      throw new Error('Title generation returned an empty title');
+    }
+
+    return normalizedTitle.length > 60
+      ? `${normalizedTitle.slice(0, 57).trimEnd()}...`
+      : normalizedTitle;
   }
 }

@@ -36,19 +36,21 @@ export class OrganizationsController {
     @CurrentUser() user: AuthenticatedUser,
     @Body() body: UpdateOrganization,
   ) {
-    await this.organizationsService.updateOrganization(
+    return this.organizationsService.updateOrganization(
       user.id,
       user.organizationId,
       body,
     );
-    return {
-      success: 'Organization successfully updated',
-    };
   }
 
   @Get('me/members')
   async getMembers(@CurrentUser() user: AuthenticatedUser) {
     return this.organizationsService.getMembers(user.organizationId, user.id);
+  }
+
+  @Get('me/activity')
+  async getActivity(@CurrentUser() user: AuthenticatedUser) {
+    return this.organizationsService.getActivity(user.organizationId, user.id);
   }
 
   @Delete('me/members/:id')

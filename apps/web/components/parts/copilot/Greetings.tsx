@@ -11,16 +11,16 @@ export default function Greetings() {
 
   const { data: organization } = useGetMyOrg();
   const [message, setMessage] = useState("");
-  const [chatTitle, setChatTitle] = useState("");
   const { mutateAsync: createChat } = useCreateChat();
 
   const handleInputChange = (value: string) => {
     setMessage(value);
-    setChatTitle(value.split(" ").slice(0, 5).join(" "));
   };
 
-  const handleSubmit = async (title: string) => {
-    const chat = await createChat(title);
+  const handleSubmit = async () => {
+    if (!message.trim()) return;
+
+    const chat = await createChat();
     router.push(
       `/copilot/${chat.id}?pendingMessage=${encodeURIComponent(message)}`,
     );
@@ -37,24 +37,26 @@ export default function Greetings() {
             <span className="bg-gradient-to-r from-indigo-600 via-purple-500 to-pink-900 bg-[length:200%_auto] bg-clip-text font-extrabold text-transparent animate-gradient">{`${firstName}`}</span>{" "}
             where should we start today
           </span>
-          <div className="flex relative items-center">
+          <form
+            className="flex relative items-center"
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleSubmit();
+            }}
+          >
             <input
               placeholder={`Ask me anything about ${organization?.name}`}
               className="border w-full p-4 rounded-full border-slate-200 focus:border-indigo-500 focus:outline-none placeholder:text-sm"
+              value={message}
               onChange={(e) => handleInputChange(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && message.trim()) {
-                  handleSubmit(chatTitle);
-                }
-              }}
-            ></input>
+            />
             <button
+              type="submit"
               className=" absolute bg-indigo-500 p-2 rounded-full text-white right-2 z-10 transition delay-100 hover:bg-indigo-800 cursor-pointer"
-              onClick={() => handleSubmit(chatTitle)}
             >
               <ArrowUp className="" />
             </button>
-          </div>
+          </form>
         </div>
       </div>
     </div>

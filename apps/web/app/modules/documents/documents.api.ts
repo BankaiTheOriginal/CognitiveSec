@@ -1,5 +1,6 @@
 import { api } from "@/app/common/api";
-import { Document } from "./documents.types";
+import { Document, DocumentWithChunks } from "./documents.types";
+import { AxiosProgressEvent } from "axios";
 
 const base_url = `${process.env.NEXT_PUBLIC_API_URL}/documents`;
 
@@ -9,11 +10,23 @@ export async function getDocuments(): Promise<Document[]> {
 }
 
 export async function uploadFiles(files: File[]) {
+  return uploadFilesWithProgress(files);
+}
+
+export async function uploadFilesWithProgress(
+  files: File[],
+  onProgress?: (progress: number) => void,
+) {
   const formData = new FormData();
   files.forEach((file) => formData.append("files", file));
 
   const response = await api.post(`${base_url}/upload`, formData, {
     headers: { "Content-Type": "multipart/form-data" },
+    onUploadProgress: (event: AxiosProgressEvent) => {
+      if (!event.total) return;
+      const progress = Math.round((event.loaded / event.total) * 100);
+      onProgress?.(progress);
+    },
   });
   return response.data;
 }
@@ -32,7 +45,7 @@ export async function reindex(id: string) {
   return response.data;
 }
 
-export async function chunks(id: string) {
+export async function chunks(id: string): Promise<DocumentWithChunks> {
   const response = await api.get(`${base_url}/${id}/chunks`);
   return response.data;
 }

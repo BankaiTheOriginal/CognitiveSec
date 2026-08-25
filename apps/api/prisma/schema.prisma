@@ -32,7 +32,6 @@ model User {
   passwordHash     String       @map("password_hash")
   refreshTokenHash String?      @map("refresh_token_hash")
   createdAt        DateTime     @default(now()) @map("created_at")
-  teamMemberships TeamMemberships[]
   // Relations
   memberships      Membership[]
 
@@ -46,14 +45,30 @@ model Organization {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  teams     Team[]
   documents Document[]
   chats     Chat[]
-  
+  activityEvents ActivityEvent[]
   memberships Membership[]
-  teamMemberships TeamMemberships[]
 
   @@map("organizations")
+}
+
+model ActivityEvent {
+  id             String   @id @default(cuid())
+  organizationId String   @map("organization_id")
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  actorId        String?  @map("actor_id")
+  actorName      String?  @map("actor_name")
+  action         String
+  entityType     String   @map("entity_type")
+  entityId       String?  @map("entity_id")
+  message        String
+  metadata       Json?
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  @@index([organizationId, createdAt])
+  @@index([entityType, entityId])
+  @@map("activity_events")
 }
 
 model Membership {
@@ -70,36 +85,6 @@ model Membership {
   @@index([organizationId])
   @@index([userId])
   @@map("memberships")
-}
-
-model TeamMemberships {
-  id String @id @default(cuid())
-  userId String @map("user_id")
-  user User @relation(fields: [userId], references: [id])
-  organizationId String @map("organization_id")
-  organization Organization @relation(fields: [organizationId], references: [id])
-  teamId String @map("team_id")
-  team Team @relation(fields: [teamId], references: [id])
-
-  createdAt DateTime @default(now())
-  @@unique([userId, teamId])
-  @@index([userId])
-  @@index([organizationId])
-  @@index([teamId])
-  @@map("team_memberships")
-}
-
-model Team {
-  id String @id @default(cuid())
-  name String
-  organizationId String @map("organization_id")
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now()) @map("created_at")
-
-  chats Chat[]
-  teamMemberships TeamMemberships[]
-  @@index([organizationId])
-  @@map("teams")
 }
 
 model Document {
@@ -140,8 +125,6 @@ model Chat {
   title String
   organizationId String @map("organization_id")
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  teamId String? @map("team_id")
-  team Team? @relation(fields: [teamId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now()) @map("created_at")
    messages Message[]
 

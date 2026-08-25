@@ -4,9 +4,9 @@ import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { ChatModule } from './modules/chat/chat.module';
 import { DocumentModule } from './modules/document/document.module';
-import { TeamsModule } from './modules/teams/teams.module';
 import { UsersModule } from './modules/users/users.module';
 import { OrganizationsModule } from './modules/organizations/organizations.module';
+import { SearchModule } from './modules/search/search.module';
 import { QueueConfigModule } from './modules/queue/queue-config.module';
 import { ConfigModule } from '@nestjs/config';
 import configuration from 'configuration';
@@ -22,9 +22,9 @@ import configuration from 'configuration';
     AuthModule,
     ChatModule,
     DocumentModule,
-    TeamsModule,
     UsersModule,
     OrganizationsModule,
+    SearchModule,
   ],
   controllers: [AppController],
   providers: [AppService],

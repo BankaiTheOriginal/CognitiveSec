@@ -1,8 +1,9 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { AuthService } from 'src/auth/auth.service';
 import { PrismaService } from 'src/prisma.service';
-import { CreateChat } from './dto/chat.dto';
 import { ChatInferenceService } from './chat-inference.service';
+
+const DEFAULT_CHAT_TITLE = 'New chat';
 
 @Injectable()
 export class ChatService {
@@ -18,26 +19,93 @@ export class ChatService {
       organization_id,
     );
 
-    const userTeams = await this.prisma.teamMemberships.findMany({
-      where: { userId: user_id, organizationId: membership.organizationId },
-      select: { teamId: true },
-    });
-
-    const teamIds = userTeams.map((t) => t.teamId);
-
     return this.prisma.chat.findMany({
       where: {
-        AND: [
-          { organizationId: membership.organizationId },
-          {
-            OR: [{ teamId: { in: teamIds } }, { teamId: null }],
-          },
-        ],
+        organizationId: membership.organizationId,
       },
     });
   }
 
-  async createChat(organization_id: string, user_id: string, title: string) {
+  private generateChatTitleFromMessage(message: string) {
+    const cleaned = message
+      .trim()
+      .replace(/\s+/g, ' ')
+      .replace(/[?!.]+$/g, '')
+      .replace(/[^\w\s'-]/g, '');
+
+    const stopWords = new Set([
+      'a',
+      'an',
+      'and',
+      'are',
+      'as',
+      'at',
+      'be',
+      'but',
+      'by',
+      'can',
+      'could',
+      'do',
+      'does',
+      'for',
+      'from',
+      'how',
+      'i',
+      'if',
+      'in',
+      'is',
+      'it',
+      'me',
+      'my',
+      'need',
+      'of',
+      'on',
+      'or',
+      'please',
+      'should',
+      'tell',
+      'that',
+      'the',
+      'to',
+      'up',
+      'us',
+      'was',
+      'what',
+      'when',
+      'where',
+      'which',
+      'who',
+      'why',
+      'with',
+      'would',
+      'you',
+      'your',
+    ]);
+
+    const words = cleaned.split(' ').filter(Boolean);
+    const meaningfulWords = words.filter(
+      (word, index) => !stopWords.has(word.toLowerCase()) || index === 0,
+    );
+    const titleWords = (meaningfulWords.length ? meaningfulWords : words)
+      .slice(0, 6)
+      .map((word) =>
+        word
+          .split('-')
+          .map((segment) =>
+            segment
+              ? segment[0].toUpperCase() + segment.slice(1).toLowerCase()
+              : segment,
+          )
+          .join('-'),
+      );
+
+    const title =
+      titleWords.join(' ').trim() || DEFAULT_CHAT_TITLE;
+
+    return title.length > 60 ? `${title.slice(0, 57).trimEnd()}...` : title;
+  }
+
+  async createChat(organization_id: string, user_id: string, title?: string) {
     const membership = await this.authService.findUserInOrg(
       user_id,
       organization_id,
@@ -45,7 +113,7 @@ export class ChatService {
 
     const chat = await this.prisma.chat.create({
       data: {
-        title,
+        title: title?.trim() || DEFAULT_CHAT_TITLE,
         organizationId: membership.organizationId,
       },
     });
@@ -112,10 +180,31 @@ export class ChatService {
     message: string,
   ) {
     const chat = await this.getChat(organization_id, user_id, chat_id);
-    return this.chatInference.executeContextualSearchAndAnswer(
-      chat.id,
-      chat.organizationId,
-      message,
-    );
+    const shouldAutoTitle =
+      chat.title === DEFAULT_CHAT_TITLE &&
+      (await this.prisma.message.count({ where: { chatId: chat.id } })) === 0;
+    const autoTitlePromise = shouldAutoTitle
+      ? this.chatInference
+          .generateChatTitle(message)
+          .catch(() => this.generateChatTitleFromMessage(message))
+      : Promise.resolve<string | null>(null);
+
+    const [assistantMessage, autoTitle] = await Promise.all([
+      this.chatInference.executeContextualSearchAndAnswer(
+        chat.id,
+        chat.organizationId,
+        message,
+      ),
+      autoTitlePromise,
+    ]);
+
+    if (autoTitle) {
+      await this.prisma.chat.update({
+        where: { id: chat.id },
+        data: { title: autoTitle },
+      });
+    }
+
+    return assistantMessage;
   }
 }

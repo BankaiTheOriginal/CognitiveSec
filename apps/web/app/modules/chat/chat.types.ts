@@ -4,8 +4,19 @@ export interface Chat {
   id: string;
   title: string;
   organizationId: string;
-  teamId?: string | null;
   createdAt: string;
+}
+
+export interface Citation {
+  documentId?: string;
+  chunkId?: string;
+  documentName?: string;
+  sectionTitle?: string | null;
+  snippet?: string;
+  document_id?: string;
+  chunk_id?: string;
+  document_name?: string;
+  section_title?: string | null;
 }
 
 export interface Message {
@@ -13,16 +24,8 @@ export interface Message {
   chatId: string;
   role: "user" | "assistant";
   text: string;
-  citations?: {
-    documentId: string;
-    chunkId: string;
-    snippet: string;
-  }[];
+  citations?: Citation[] | null;
   createdAt: string;
-}
-
-export interface CreateChatInput {
-  title: string;
 }
 
 export interface SendMessageInput {
@@ -31,15 +34,4 @@ export interface SendMessageInput {
 
 export interface UpdateChatTitleInput {
   title: string;
-}
-
-export type ChatsResponse = Chat[];
-export type ChatResponse = Chat;
-export type MessagesResponse = Message[];
-export type MessageResponse = Message;
-
-// Optional: For chat list item in UI
-export interface ChatListItem extends Chat {
-  lastMessage?: string;
-  lastMessageAt?: string;
 }

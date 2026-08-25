@@ -12,6 +12,18 @@ export interface Document {
   status: DocStatus;
   uploadedAt: string;
   uploadedBy: string;
-  chunksCount: string;
+  chunksCount: number;
   organizationId: string;
+}
+
+export interface DocumentChunk {
+  id: string;
+  documentId: string;
+  sectionTitle: string | null;
+  content: string;
+  organizationId?: string;
+}
+
+export interface DocumentWithChunks extends Document {
+  chunks: DocumentChunk[];
 }

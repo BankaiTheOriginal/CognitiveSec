@@ -1,4 +1,5 @@
 import {
+  DeleteObjectCommand,
   GetObjectCommand,
   PutObjectCommand,
   S3Client,
@@ -44,6 +45,20 @@ export class AiStorageService {
       return response;
     } catch (error: any) {
       return new Error('Error uploading file', error);
+    }
+  }
+
+  async deleteFileFromR2(fileKey: string) {
+    const command = new DeleteObjectCommand({
+      Bucket: 'cognitive-sec',
+      Key: fileKey,
+    });
+
+    try {
+      return await this.r2Client.send(command);
+    } catch (error: any) {
+      this.logger.error(`Error deleting file from R2: ${fileKey}`, error);
+      return null;
     }
   }
 

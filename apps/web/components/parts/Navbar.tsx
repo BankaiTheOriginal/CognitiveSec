@@ -1,38 +1,121 @@
 "use client";
 
-import { useState } from "react";
-import { Upload, X } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Search, Upload, X } from "lucide-react";
 import { useAuthStore } from "@/app/modules/auth/auth.store";
 import { useGetMyOrgs } from "@/app/modules/organization/organization.hook";
 import { Dropdown } from "@/components/ui/Dropdown";
 import { useUpload } from "@/app/modules/documents/documents.hook";
+import SearchModal from "@/components/parts/search/SearchModal";
+
+const allowedExtensions = [".pdf", ".docx", ".txt", ".csv"];
+const maxUploadSizeBytes = 20 * 1024 * 1024;
 
 export default function NavBar() {
   const { data: orgData } = useGetMyOrgs();
-  const { mutateAsync: uploadMutation } = useUpload();
+  const { mutateAsync: uploadMutation, isPending: isUploading } = useUpload();
+  const switchActiveWorkspace = useAuthStore(
+    (state) => state.switchActiveWorkspace,
+  );
+  const activeOrganizationId = useAuthStore(
+    (state) => state.activeOrganizationId,
+  );
 
   const [modal, setModal] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
   const [dragging, setDragging] = useState(false);
   const [files, setFiles] = useState<File[]>([]);
+  const [fileErrors, setFileErrors] = useState<string[]>([]);
+  const [uploadProgress, setUploadProgress] = useState(0);
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        setSearchOpen(true);
+      }
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, []);
 
   if (!orgData) {
     return <div>No organizations found.</div>;
   }
 
+  const activeOrg =
+    orgData.find((organization) => organization.id === activeOrganizationId) ??
+    orgData[0];
+
   const orgItems = orgData.map((org) => ({
     label: org.organization.name,
     onClick: () => {
-      useAuthStore().switchActiveWorkspace(org.id);
+      void switchActiveWorkspace(org.id);
     },
   }));
 
-  const handleUpload = async (files: File[]) => {
-    setModal(false);
-    uploadMutation(files);
+  const validateFile = (file: File) => {
+    const lowerName = file.name.toLowerCase();
+    const isAllowed = allowedExtensions.some((extension) =>
+      lowerName.endsWith(extension),
+    );
+
+    if (!isAllowed) {
+      return `${file.name} is not a supported file type. Use PDF, DOCX, TXT, or CSV.`;
+    }
+
+    if (file.size > maxUploadSizeBytes) {
+      return `${file.name} is larger than 20MB.`;
+    }
+
+    return null;
   };
 
   const handleFiles = (selectedFiles: File[]) => {
-    setFiles((prev) => [...prev, ...selectedFiles]);
+    const acceptedFiles: File[] = [];
+    const errors: string[] = [];
+
+    selectedFiles.forEach((file) => {
+      const error = validateFile(file);
+      if (error) {
+        errors.push(error);
+        return;
+      }
+
+      acceptedFiles.push(file);
+    });
+
+    if (errors.length > 0) {
+      setFileErrors((prev) => [...prev, ...errors]);
+    }
+
+    if (acceptedFiles.length > 0) {
+      setFiles((prev) => [...prev, ...acceptedFiles]);
+    }
+  };
+
+  const resetUploadState = () => {
+    setFiles([]);
+    setFileErrors([]);
+    setUploadProgress(0);
+  };
+
+  const handleUpload = async () => {
+    if (files.length === 0) return;
+
+    setFileErrors([]);
+    setUploadProgress(0);
+    try {
+      await uploadMutation({
+        files,
+        onProgress: setUploadProgress,
+      });
+      setModal(false);
+      resetUploadState();
+    } catch {
+      // The hook already surfaces the toast. Keep the modal open so the user can adjust files.
+    }
   };
 
   return (
@@ -45,7 +128,7 @@ export default function NavBar() {
             <Dropdown
               trigger={
                 <span className="text-sm font-semibold">
-                  {orgData[0].organization.name}
+                  {activeOrg?.organization.name}
                 </span>
               }
               items={orgItems}
@@ -53,13 +136,24 @@ export default function NavBar() {
             />
           </div>
 
-          <button
-            className="flex items-center gap-2 rounded-lg bg-black px-4 py-2 text-sm text-white transition hover:bg-slate-800"
-            onClick={() => setModal(true)}
-          >
-            <Upload className="h-4 w-4" />
-            Upload Docs
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              className="flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm text-slate-700 transition hover:border-indigo-300 hover:bg-indigo-50"
+              onClick={() => setSearchOpen(true)}
+            >
+              <Search className="h-4 w-4" />
+              Search
+            </button>
+
+            <button
+              className="flex items-center gap-2 rounded-lg bg-black px-4 py-2 text-sm text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-400"
+              onClick={() => setModal(true)}
+              disabled={isUploading}
+            >
+              <Upload className="h-4 w-4" />
+              {isUploading ? "Uploading..." : "Upload Docs"}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -77,6 +171,7 @@ export default function NavBar() {
               <button
                 onClick={() => setModal(false)}
                 className="rounded-lg p-2 transition hover:bg-slate-100"
+                disabled={isUploading}
               >
                 <X className="h-5 w-5" />
               </button>
@@ -124,6 +219,7 @@ export default function NavBar() {
                   id="file-upload"
                   type="file"
                   multiple
+                  accept={allowedExtensions.join(",")}
                   className="hidden"
                   onChange={(e) => {
                     if (!e.target.files) return;
@@ -131,7 +227,18 @@ export default function NavBar() {
                     handleFiles(Array.from(e.target.files));
                   }}
                 />
-              </label>
+                </label>
+
+              {fileErrors.length > 0 && (
+                <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+                  <p className="font-semibold">Some files were skipped</p>
+                  <ul className="mt-2 space-y-1">
+                    {fileErrors.map((error) => (
+                      <li key={error}>• {error}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
 
               {files.length > 0 && (
                 <div className="mt-6">
@@ -170,32 +277,50 @@ export default function NavBar() {
                   </div>
                 </div>
               )}
+
+              {isUploading && (
+                <div className="mt-6 rounded-xl border border-slate-200 bg-slate-50 p-4">
+                  <div className="flex items-center justify-between text-xs font-medium text-slate-500">
+                    <span>Upload progress</span>
+                    <span>{uploadProgress}%</span>
+                  </div>
+                  <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-200">
+                    <div
+                      className="h-full rounded-full bg-black transition-all"
+                      style={{ width: `${uploadProgress}%` }}
+                    />
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="flex justify-end gap-3 border-t px-6 py-4">
               <button
                 onClick={() => {
                   setModal(false);
-                  setFiles([]);
+                  resetUploadState();
                 }}
                 className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium transition hover:bg-slate-100"
+                disabled={isUploading}
               >
                 Cancel
               </button>
 
               <button
-                disabled={files.length === 0}
+                disabled={files.length === 0 || isUploading}
                 className="rounded-lg bg-black px-5 py-2 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300"
-                onClick={() => {
-                  handleUpload(files);
-                }}
+                onClick={handleUpload}
               >
-                Upload {files.length > 0 && `(${files.length})`}
+                {isUploading
+                  ? "Uploading..."
+                  : `Upload ${files.length > 0 ? `(${files.length})` : ""}`}
               </button>
             </div>
           </div>
         </div>
       )}
+
+      <SearchModal open={searchOpen} onClose={() => setSearchOpen(false)} />
     </div>
   );
 }

@@ -4,12 +4,7 @@ import { api } from "@/app/common/api";
 import { useAuthStore } from "../auth/auth.store";
 import type {
   Chat,
-  ChatListItem,
-  ChatsResponse,
-  CreateChatInput,
   Message,
-  MessageResponse,
-  MessagesResponse,
   SendMessageInput,
   UpdateChatTitleInput,
 } from "./chat.types";
@@ -29,8 +24,8 @@ export async function getChat(id: string): Promise<Chat> {
   return response.data as Chat;
 }
 
-export async function createChat(title: string): Promise<Chat> {
-  const response = await api.post(getBaseUrl(), { title });
+export async function createChat(): Promise<Chat> {
+  const response = await api.post(getBaseUrl(), {});
   return response.data as Chat;
 }
 
