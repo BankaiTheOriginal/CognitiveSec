@@ -19,6 +19,7 @@ export interface AuthState {
   }) => void;
   setUserInfo: (user: any, role: any) => void;
   updateAccessToken: (token: string) => void;
+  clearAuth: () => void;
   switchActiveWorkspace: (organizationId: string) => Promise<void>;
   logout: () => Promise<void>;
 }

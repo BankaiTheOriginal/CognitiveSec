@@ -35,6 +35,17 @@ export const useAuthStore = create<AuthState>()(
         localStorage.setItem("accessToken", token);
       },
 
+      clearAuth: () => {
+        set({
+          user: null,
+          accessToken: null,
+          activeOrganizationId: null,
+          role: "VIEWER",
+          isAuthenticated: false,
+        });
+        localStorage.removeItem("accessToken");
+      },
+
       switchActiveWorkspace: async (organizationId) => {
         try {
           const { access_token, user_context } =

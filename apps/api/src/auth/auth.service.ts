@@ -107,10 +107,12 @@ export class AuthService {
   }
 
   async refresh(refreshToken: string) {
-    const payload = this.jwt.verify<{
-      sub: string;
-      email: string;
-    }>(refreshToken);
+    let payload: { sub: string; email: string };
+    try {
+      payload = this.jwt.verify<{ sub: string; email: string }>(refreshToken);
+    } catch {
+      throw new ForbiddenException('Access Denied');
+    }
 
     const user = await this.prisma.user.findFirst({
       where: { id: payload.sub },

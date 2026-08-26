@@ -1,3 +1,5 @@
-export default function page() {
-    return <div>Dashboard</div>;
+import { redirect } from "next/navigation";
+
+export default function Page() {
+  redirect("/copilot");
 }

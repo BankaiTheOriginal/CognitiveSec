@@ -20,6 +20,7 @@ interface Login {
   password: string;
 }
 const SEVEN_DAYS_IN_MS = 7 * 24 * 60 * 60 * 1000;
+const IS_PRODUCTION = process.env.NODE_ENV === 'production';
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
@@ -34,7 +35,7 @@ export class AuthController {
     res.cookie('refreshToken', tokens.refresh_token, {
       maxAge: SEVEN_DAYS_IN_MS,
       httpOnly: true,
-      secure: true,
+      secure: IS_PRODUCTION,
       sameSite: 'lax',
       path: '/',
     });
@@ -63,7 +64,7 @@ export class AuthController {
     res.cookie('refreshToken', refresh_token, {
       maxAge: SEVEN_DAYS_IN_MS,
       httpOnly: true,
-      secure: true,
+      secure: IS_PRODUCTION,
       sameSite: 'lax',
       path: '/',
     });
@@ -81,7 +82,7 @@ export class AuthController {
 
     res.clearCookie('refreshToken', {
       httpOnly: true,
-      secure: true,
+      secure: IS_PRODUCTION,
       sameSite: 'lax',
       path: '/',
     });
@@ -101,7 +102,7 @@ export class AuthController {
     res.cookie('refreshToken', tokens.refresh_token, {
       maxAge: SEVEN_DAYS_IN_MS,
       httpOnly: true,
-      secure: true,
+      secure: IS_PRODUCTION,
       sameSite: 'lax',
       path: '/',
     });
