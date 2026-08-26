@@ -1,4 +1,89 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# CognitiveSec Web
+
+The CognitiveSec web application is a Next.js client for managing an organization's knowledge base and working with Copilot. It provides the workspace navigation, authentication flows, document operations, grounded conversations, source inspection, search, and organization administration interfaces.
+
+## Features
+
+- Sign in, sign up, refresh sessions, log out, and switch workspaces.
+- Start and manage Copilot conversations with streamed-feeling chat interactions, message history, and citations.
+- Browse cited source documents and inspect the chunks behind an answer.
+- Upload supported files with drag and drop, validation, and upload progress.
+- View document indexing status and chunk counts, open document details, delete documents, and request reindexing.
+- Search across chats and indexed documents from the workspace search interface.
+- Update organization details, review audit activity, manage members, and administer roles according to permissions.
+
+## Routes
+
+| Route           | Purpose                                      |
+| --------------- | -------------------------------------------- |
+| `/login`        | Sign in and account registration             |
+| `/copilot`      | Start a new Copilot conversation             |
+| `/copilot/[id]` | Continue a conversation and inspect sources  |
+| `/knowledge`    | Manage documents and indexing                |
+| `/settings`     | Organization settings, members, and activity |
+
+## Technology
+
+- Next.js 16 with the App Router
+- React 19 and TypeScript
+- TanStack Query for server state and document indexing refreshes
+- Axios for API communication
+- Zustand for authentication state
+- React Hook Form and Zod for form validation
+- Tailwind CSS and Lucide icons for the interface
+
+## Prerequisites
+
+- Node.js 20 or newer
+- The CognitiveSec API running locally or at a reachable deployment
+
+## Configuration
+
+Create `apps/web/.env.local`:
+
+```env
+NEXT_PUBLIC_API_URL=http://localhost:4000
+```
+
+The URL should point to the API origin without a trailing route path. The API enables credentialed browser requests for the configured frontend site.
+
+## Getting Started
+
+From this directory:
+
+```bash
+npm install
+npm run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000).
+
+## Scripts
+
+```bash
+npm run dev      # Start the development server
+npm run build    # Create a production build
+npm run start    # Serve the production build
+npm run lint     # Run ESLint
+```
+
+## Project Structure
+
+```text
+app/
+	(dashboard)/       Authenticated workspace routes
+	modules/           Feature API clients, hooks, stores, and types
+	common/            Shared API and validation helpers
+components/
+	parts/             Workspace-level UI such as navigation and source views
+	ui/                Reusable UI primitives
+```
+
+## Related Documentation
+
+- [Repository overview](../../README.md)
+- [API application](../api/README.md)
+  This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started
 

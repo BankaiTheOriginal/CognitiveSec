@@ -1,3 +1,126 @@
+# CognitiveSec API
+
+The CognitiveSec API is a NestJS service that provides authentication, tenant-aware workspace APIs, document ingestion, semantic retrieval, Copilot inference, search, and audit activity. Prisma manages the PostgreSQL data model, while Redis and BullMQ handle document processing outside the request cycle.
+
+## Capabilities
+
+- JWT access authentication with HTTP-only refresh-token cookies.
+- Organization memberships with `ADMIN`, `EDITOR`, and `VIEWER` roles.
+- Tenant-aware guards for protected organization and document data.
+- Document upload and validation for PDF, DOCX, TXT, and CSV files up to 20 MB.
+- Asynchronous extraction, chunking, embedding, and indexing with status tracking and reindex support.
+- Cloudflare R2 source-file storage.
+- PostgreSQL vector retrieval with `pgvector`.
+- OpenRouter-powered embeddings and grounded chat completion with document citations.
+- Search across chat titles, messages, document names, and indexed chunk content.
+- Organization activity events for important administrative and document operations.
+
+## API Surface
+
+All protected routes require a valid authenticated session. Organization and membership access is enforced server-side.
+
+| Area           | Routes                                                                                                                                                                                   |
+| -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Authentication | `POST /auth/login`, `POST /auth/sign-up`, `POST /auth/refresh`, `POST /auth/logout`, `POST /auth/switch-workspace`, `GET /auth/me`                                                       |
+| Documents      | `GET /documents`, `POST /documents/upload`, `GET /documents/:id`, `DELETE /documents/:id`, `POST /documents/:id/reindex`, `GET /documents/:id/chunks`, `GET /documents/:id/status`       |
+| Chat           | `GET/POST /organizations/:orgId/chats`, `GET/DELETE /organizations/:orgId/chats/:id`, `PATCH /organizations/:orgId/chats/:id/title`, `GET/POST /organizations/:orgId/chats/:id/messages` |
+| Search         | `GET /search?q=...`                                                                                                                                                                      |
+| Organization   | `GET/PATCH /organizations/me`, `GET /organizations/me/organizations`, `GET /organizations/me/members`, `GET /organizations/me/activity`, `DELETE /organizations/me/members/:id`          |
+| Users          | `GET/PATCH /users/me`, `PATCH /users/:id/role`                                                                                                                                           |
+
+## Architecture
+
+```text
+HTTP request -> NestJS controllers -> domain services -> Prisma/PostgreSQL
+                                      |
+                                      +-> Redis/BullMQ -> document worker
+                                      +-> Cloudflare R2
+                                      +-> OpenRouter
+```
+
+When a document is uploaded or reindexed, the API stores or reuses the source file and queues a parsing job. The worker extracts text, creates meaningful chunks, generates vector embeddings, and updates the document status to `READY` or `FAILED`. Chat inference uses vector similarity to select context before generating a cited answer.
+
+## Prerequisites
+
+- Node.js 20 or newer
+- PostgreSQL with the `vector`/`pgvector` extension enabled
+- Redis
+- A Cloudflare R2 bucket named `cognitive-sec`, or an equivalent configured bucket
+- An OpenRouter account and API key
+
+## Configuration
+
+Create `apps/api/.env`:
+
+```env
+DIRECT_URL=postgresql://user:password@localhost:5432/cognitivesec
+JWT_SECRET=replace-with-a-long-random-secret
+OPENROUTER_API_KEY=your-openrouter-key
+R2_ACCOUNT_ID=your-cloudflare-account-id
+R2_ACCESS_KEY_ID=your-r2-access-key
+R2_SECRET_ACCESS_KEY=your-r2-secret-key
+
+PORT=4000
+REDIS_HOST=localhost
+REDIS_PORT=6379
+REDIS_PASSWORD=
+APP_SITE_URL=http://localhost:3000
+```
+
+Keep this file out of source control. `PORT`, Redis settings, and `APP_SITE_URL` have local defaults, but production deployments should set them explicitly.
+
+## Getting Started
+
+From this directory:
+
+```bash
+npm install
+npx prisma migrate deploy
+npm run start:dev
+```
+
+The API listens on [http://localhost:4000](http://localhost:4000) by default. Start Redis and PostgreSQL before launching the service. For local schema development, use `npx prisma migrate dev`.
+
+## Scripts
+
+```bash
+npm run start:dev  # Start NestJS in watch mode
+npm run build      # Compile the API
+npm run start:prod # Run the compiled API
+npm run lint       # Lint and fix TypeScript files
+npm run test       # Run unit tests
+npm run test:e2e   # Run end-to-end tests
+npm run test:cov   # Generate test coverage
+```
+
+## Data Model
+
+The Prisma schema includes users, organizations, memberships, activity events, documents, document chunks, chats, and messages. Document chunks store embeddings in PostgreSQL for semantic retrieval.
+
+## Project Structure
+
+```text
+src/
+  auth/                 Authentication and session management
+  common/               Shared guards, decorators, and utilities
+  modules/
+    chat/               Chat APIs and retrieval-augmented inference
+    document/           Upload, indexing, workers, and document APIs
+    integrations/       Storage and external AI integrations
+    organizations/      Organization and member administration
+    queue/              Queue configuration
+    search/             Cross-entity search
+    users/              User profile and role operations
+prisma/
+  schema.prisma         PostgreSQL data model
+  migrations/           Versioned database migrations
+```
+
+## Related Documentation
+
+- [Repository overview](../../README.md)
+- [Web application](../web/README.md)
+
 <p align="center">
   <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
 </p>
